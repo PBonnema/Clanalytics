@@ -1,0 +1,177 @@
+services:
+    mongo-test:
+        profiles:
+            - only-db-test
+            - transfer-db-test
+            - ingestion-test
+            - dashboard-test
+        image: mongo
+        restart: always
+        ports:
+            - 27018:27017
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: example
+        networks:
+            - nat-test
+        volumes:
+            - stats-test:/data/db
+        
+    mongo-transfer:
+        profiles:
+            - transfer-db-test
+        depends_on:
+            - mongo
+            - mongo-test
+        image: mongo
+        restart: on-failure
+        networks:
+            - nat-test
+            - nat
+        command: sh -c 'mongodump -d BlockTanksStats --uri="mongodb://root:example@mongo:27017" --archive --authenticationDatabase admin | mongorestore --drop --uri="mongodb://root:example@mongo-test:27017" --archive'
+        
+    mongo:
+        profiles:
+            - transfer-db-test
+            - only-db
+            - ingestion
+            - dashboard
+        image: mongo
+        restart: always
+        ports:
+            - 27017:27017
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: example
+        networks:
+            - nat
+        volumes:
+            - stats:/data/db
+
+    mongo-express-test:
+        profiles:
+            - only-db-test
+            - ingestion-test
+        depends_on:
+            - mongo-test
+        image: mongo-express
+        ports:
+            - 8082:8081
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: root
+            ME_CONFIG_MONGODB_ADMINPASSWORD: example
+            ME_CONFIG_MONGODB_SERVER: mongo-test
+        networks:
+            - nat-test
+
+    mongo-express:
+        profiles:
+            - only-db
+        depends_on:
+            - mongo
+        image: mongo-express
+        ports:
+            - 8081:8081
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: root
+            ME_CONFIG_MONGODB_ADMINPASSWORD: example
+        networks:
+            - nat
+            
+    selenium-chrome:
+        profiles:
+            - ingestion
+            - ingestion-test
+        image: selenium/standalone-chrome-debug
+        volumes:
+            - /dev/shm:/dev/shm # This is recommended by the readme of the image. https://github.com/SeleniumHQ/docker-selenium
+        environment:
+            START_XVFB: 'true' # If this is true, it starts a server in the container that is only necessary when you don't run chrome in headless mode
+            VNC_NO_PASSWORD: 1
+        restart: always
+        ports:
+            - 4444:4444
+            - 5900:5900
+        networks:
+            - nat
+            - nat-test
+
+    ingestion-test:
+        profiles:
+            - ingestion-test
+        depends_on:
+            - mongo-test
+            - selenium-chrome
+        build:
+            context: ./
+            dockerfile: Ingestion/Dockerfile
+            args:
+                IngestionDir: Ingestion
+                DataAccessDir: DataAccess
+        environment:
+            ENVIRONMENT: Test
+        networks:
+            - nat-test
+
+    ingestion:
+        profiles:
+            - ingestion
+        depends_on:
+            - mongo
+            - selenium-chrome
+        build:
+            context: ./
+            dockerfile: Ingestion/Dockerfile
+            args:
+                IngestionDir: Ingestion
+                DataAccessDir: DataAccess
+        environment:
+            ENVIRONMENT: Production
+        networks:
+            - nat
+
+    blocktanksstats-test:
+        profiles:
+            - dashboard-test
+        depends_on:
+            - mongo-test
+        build:
+            context: ./
+            dockerfile: BlockTanksStats/Dockerfile
+            args:
+                BlockTanksStatsDir: BlockTanksStats
+                DataAccessDir: DataAccess
+        environment:
+            ENVIRONMENT: Test
+        networks:
+            - nat-test
+        volumes:
+            - ./SavedStats-test:/app/SavedStats
+
+    blocktanksstats:
+        profiles:
+            - dashboard
+        depends_on:
+            - mongo
+        build:
+            context: ./
+            dockerfile: BlockTanksStats/Dockerfile
+            args:
+                BlockTanksStatsDir: BlockTanksStats
+                DataAccessDir: DataAccess
+        environment:
+            ENVIRONMENT: Production
+        networks:
+            - nat
+        volumes:
+            - ./SavedStats:/app/SavedStats
+
+networks:
+    nat:
+        name: nat
+    nat-test:
+        name: nat-test
+
+volumes:
+    stats:
+    stats-test:

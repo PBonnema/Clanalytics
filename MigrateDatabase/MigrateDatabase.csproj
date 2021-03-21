@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\Clan.cs" />
+    <Compile Remove="Models\ClanLeaderboardComp.cs" />
+    <Compile Remove="Models\Community.cs" />
+    <Compile Remove="Models\CompletedGame.cs" />
+    <Compile Remove="Models\NameStatus.cs" />
+    <Compile Remove="Models\PlayerLeaderboardComp.cs" />
+    <Compile Remove="Models\XPInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" Version="2.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
+  </ItemGroup>
+
+</Project>

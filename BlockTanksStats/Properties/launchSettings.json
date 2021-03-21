@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BlockTanksStats": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

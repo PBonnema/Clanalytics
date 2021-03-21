@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MigrateDatabase": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Ingestion": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
