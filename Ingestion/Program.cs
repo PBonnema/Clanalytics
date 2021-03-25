@@ -56,7 +56,9 @@ namespace Ingestion
 
             await FetchClanMemberStats(playerService, blockTanksPlayerAPIAgent, scrapeBTPageService, new[] {
                 "RIOT",
-                "SWIFT"
+                "SWIFT",
+                "ZR",
+                "DRONE",
             });
 
             await FetchTrackedPlayerStats(playerService, blockTanksPlayerAPIAgent, scrapeBTPageService, new[]
@@ -79,6 +81,7 @@ namespace Ingestion
                 "magic_exe",
                 "yrene",
                 "temp",
+                "Luinlanthir",
             });
 
             sw.Stop();
@@ -87,6 +90,7 @@ namespace Ingestion
 
         private static async Task FetchClanLeaderboardStats(ClanService clanService, BlockTanksAPIAgent blockTanksPlayerAPIAgent)
         {
+            Console.WriteLine($"Fetching clan leaderboard...");
             var clans = await blockTanksPlayerAPIAgent.FetchClanLeaderboard();
             foreach (var clan in clans)
             {
@@ -98,10 +102,10 @@ namespace Ingestion
         {
             foreach (var clanTag in clanTags)
             {
-                Console.WriteLine($"Fetching {clanTag} members....");
+                Console.WriteLine($"Fetching {clanTag} members...");
                 var playerNames = await scrapeBTPageService.GetClanMembersAsync(clanTag);
 
-                Console.WriteLine($"Fetching player stats of {playerNames.Count} players....");
+                Console.WriteLine($"Fetching player stats of {playerNames.Count} players...");
                 foreach (var playerName in playerNames)
                 {
                     if (!await scrapeBTPageService.ArePlayerStatsHidden(playerName))
@@ -117,7 +121,7 @@ namespace Ingestion
 
         private static async Task FetchTrackedPlayerStats(PlayerService playerService, BlockTanksAPIAgent blockTanksPlayerAPIAgent, ScrapeBTPageService scrapeBTPageService, IEnumerable<string> trackedPlayerNames)
         {
-            Console.WriteLine($"Fetching player stats of tracked players....");
+            Console.WriteLine($"Fetching player stats of tracked players...");
             foreach (var playerName in trackedPlayerNames)
             {
                 if (!await scrapeBTPageService.ArePlayerStatsHidden(playerName))

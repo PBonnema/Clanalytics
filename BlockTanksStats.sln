@@ -8,6 +8,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{740EEC28-D557-4323-B219-A901DC6D0DB6}"
 	ProjectSection(SolutionItems) = preProject
 		.dockerignore = .dockerignore
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
 		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
@@ -15,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ingestion", "Ingestion\Inge
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccess", "DataAccess\DataAccess.csproj", "{942B9670-67C1-498D-B144-7F96DD94C03C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MigrateDatabase", "MigrateDatabase\MigrateDatabase.csproj", "{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MigrateDatabase", "MigrateDatabase\MigrateDatabase.csproj", "{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

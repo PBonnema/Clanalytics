@@ -25,7 +25,7 @@ namespace DataAccess.Repository
             await (await _clans.FindAsync(_ => true, cancellationToken: cancellation)).ToListAsync(cancellation);
 
         public async Task<Clan> GetByClanIdAsync(string clanId, CancellationToken cancellation = default) =>
-            await (await _clans.FindAsync(clan => clan.Id == clanId, cancellationToken: cancellation)).FirstOrDefaultAsync(cancellation);
+            await (await _clans.FindAsync(clan => clan.ClanId == clanId, cancellationToken: cancellation)).FirstOrDefaultAsync(cancellation);
 
         public async Task<Clan> CreateAsync(Clan clan, CancellationToken cancellation = default)
         {

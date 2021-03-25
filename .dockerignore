@@ -4,12 +4,15 @@ azure-pipelines.yml
 [b|B]in
 [O|o]bj
 **/dist
+SavedStats*
+Dashboards
 
 **/.classpath
 **/.dockerignore
 **/.env
 **/.git
 **/.gitignore
+**/.gitattributes
 **/.project
 **/.settings
 **/.toolstarget

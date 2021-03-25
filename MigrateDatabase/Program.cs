@@ -16,7 +16,7 @@ namespace MigrateDatabase
             {
                 case "Production": connectionString = "mongodb://root:example@mongo:27017"; break;
                 case "Test": connectionString = "mongodb://root:example@mongo-test:27017"; break;
-                case "Development": connectionString = "mongodb://root:example@localhost:27017"; break;
+                case "Development": connectionString = "mongodb://root:example@localhost:27018"; break;
             }
 
             var client = new MongoClient(connectionString);
