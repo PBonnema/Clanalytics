@@ -1,16 +1,10 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace DataAccess.Models
 {
-    public class Player
+    public class Player : Model
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
-        public DateTime Timestamp { get; set; }
         public string PlayerId { get; set; }
         public NameStatus NameStatus { get; set; }
         public IEnumerable<PlayerLeaderboardComp> LeaderboardCompHistory { get; set; }

@@ -14,7 +14,8 @@ namespace Ingestion
     {
         static async Task Main()
         {
-            Console.WriteLine($"Initalizing at {DateTimeOffset.Now}...");
+            var now = DateTime.UtcNow;
+            Console.WriteLine($"Initalizing at {now}...");
             var sw = Stopwatch.StartNew();
 
             string connectionString = "";
@@ -31,7 +32,6 @@ namespace Ingestion
                 PlayersCollectionName: "Players",
                 ClansCollectionName: "Clans"
             );
-            var now = DateTime.UtcNow;
             var playerRepository = new PlayerRepository(blockTanksStatsDatabaseSettings, now);
             var clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
 
@@ -56,9 +56,12 @@ namespace Ingestion
 
             await FetchClanMemberStats(playerService, blockTanksPlayerAPIAgent, scrapeBTPageService, new[] {
                 "RIOT",
+                "RIOT2",
                 "SWIFT",
                 "ZR",
                 "DRONE",
+                "MERC",
+                "KRYPTO",
             });
 
             await FetchTrackedPlayerStats(playerService, blockTanksPlayerAPIAgent, scrapeBTPageService, new[]

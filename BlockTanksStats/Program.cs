@@ -15,10 +15,13 @@ namespace BlockTanksStats
     {
         static async Task Main()
         {
-            Console.WriteLine($"Initalizing at {DateTimeOffset.Now}...");
+            var now = DateTime.UtcNow;
+            Console.WriteLine($"Initalizing at {now}...");
             var sw = Stopwatch.StartNew();
 
             var culture = CultureInfo.CreateSpecificCulture("nl-NL");
+            // TODO bug. Onderstaande regel werkt niet.
+            culture.NumberFormat.NumberDecimalDigits = 1;
             var clanDashboardsPath = "Dashboards";
 
             string connectionString = "";
@@ -35,7 +38,7 @@ namespace BlockTanksStats
                     break;
                 case "Development":
                     connectionString = "mongodb://root:example@localhost:27018";
-                    statsPath = "../../../../SavedStats";
+                    statsPath = "../../../../SavedStats-test";
                     break;
             }
 
@@ -45,8 +48,11 @@ namespace BlockTanksStats
                 PlayersCollectionName: "Players",
                 ClansCollectionName: "Clans"
             );
-            var now = DateTime.UtcNow;
             var _playerRepository = new PlayerRepository(blockTanksStatsDatabaseSettings, now);
+            var _clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
+            var csvSep = ';';
+            var days = 1;
+            var periodDays = 14;
 
             if (Directory.Exists(statsPath))
             {
@@ -59,22 +65,133 @@ namespace BlockTanksStats
 
             var players = await _playerRepository.GetAsync();
 
-            var csvSep = ';';
+            foreach(var clanTag in new[] {
+                "RIOT",
+                "RIOT2",
+                "SWIFT",
+                "ZR",
+                "DRONE",
+                "MERC",
+                "KRYPTO",
+                "Tracked Player",
+            })
+            {
+                await SaveClanDashboardsAsync(clanTag, players, days, periodDays, culture, statsPath, clanDashboardsPath, csvSep, now);
+            }
+
+            var clans = await _clanRepository.GetAsync();
+            await SaveClanLeaderboardAsync(clans, days, periodDays, culture, statsPath, csvSep, now);
+
             await SavePlayerStatsAsync(players, culture, statsPath, csvSep);
-            await SaveXpPerDaysDashboardAsync("RIOT", players, 1, 14, culture, statsPath, clanDashboardsPath, csvSep);
-            await SaveXpDashboardAsync("RIOT", players, culture, statsPath, clanDashboardsPath, csvSep);
-            await SaveCumulativeXpDashboardAsync("RIOT", players, culture, statsPath, clanDashboardsPath, csvSep);
-
-            await SaveXpPerDaysDashboardAsync("SWIFT", players, 1, 14, culture, statsPath, clanDashboardsPath, csvSep);
-            await SaveXpDashboardAsync("SWIFT", players, culture, statsPath, clanDashboardsPath, csvSep);
-            await SaveCumulativeXpDashboardAsync("SWIFT", players, culture, statsPath, clanDashboardsPath, csvSep);
-
-            await SaveXpPerDaysDashboardAsync("Tracked Player", players, 1, 14, culture, statsPath, clanDashboardsPath, csvSep);
-            await SaveXpDashboardAsync("Tracked Player", players, culture, statsPath, clanDashboardsPath, csvSep);
-            await SaveCumulativeXpDashboardAsync("Tracked Player", players, culture, statsPath, clanDashboardsPath, csvSep);
 
             sw.Stop();
             Console.WriteLine($"...Done fetching in {sw.Elapsed}. Exiting.");
+        }
+
+        static async Task SaveClanDashboardsAsync(
+            string clanTag,
+            IEnumerable<Player> players,
+            int days,
+            int periodDays,
+            CultureInfo culture,
+            string statsPath,
+            string clanDashboardsPath,
+            char csvSep,
+            DateTime now)
+        {
+            await SaveKDRPerDaysDashboardAsync(clanTag, players, days, periodDays, culture, statsPath, clanDashboardsPath, csvSep, now);
+            await SaveXpPerDaysDashboardAsync(clanTag, players, days, periodDays, culture, statsPath, clanDashboardsPath, csvSep, now);
+            await SaveXpDashboardAsync(clanTag, players, culture, statsPath, clanDashboardsPath, csvSep, now);
+            await SaveCumulativeXpDashboardAsync(clanTag, players, culture, statsPath, clanDashboardsPath, csvSep, now);
+        }
+
+        static async Task SaveClanLeaderboardAsync(
+            IEnumerable<Clan> clans,
+            int days,
+            int periodDays,
+            CultureInfo culture,
+            string statsPath,
+            char csvSep,
+            DateTime now)
+        {
+            Console.WriteLine("Saving clan leaderboard...");
+
+            --periodDays;
+
+            var firstDate = now.Date.AddDays(-periodDays);
+            clans = clans.OrderByDescending(p =>
+            {
+                var first = p.LeaderboardCompHistory.FirstOrDefault(l => l.Timestamp.Date >= firstDate);
+                if (first != null)
+                {
+                    var last = p.LeaderboardCompHistory.LastOrDefault();
+                    return last.Xp - first.Xp;
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }).ToList();
+
+            var builder = new StringBuilder();
+            builder.AppendFormat(culture, "{0}", nameof(PlayerLeaderboardComp.Timestamp));
+            foreach (var clan in clans)
+            {
+                builder.AppendFormat(culture, "{0}{1}", csvSep, clan.Tag);
+            }
+            builder.AppendLine();
+
+            var statsEnumerators = new Dictionary<IEnumerator<ClanLeaderboardComp>, (bool, double)>(clans.Select(
+                c =>
+                {
+                    var enumerator = c.LeaderboardCompHistory.GetEnumerator();
+                    var done = false;
+
+                    do
+                    {
+                        done = !enumerator.MoveNext();
+                    } while (!done && enumerator.Current.Timestamp.Date < firstDate);
+                    return KeyValuePair.Create(enumerator, (done, enumerator.Current?.Xp ?? 0.0));
+                }));
+
+            try
+            {
+                for (var currentDate = firstDate; currentDate <= now.Date; currentDate = currentDate.AddDays(days))
+                {
+                    builder.AppendFormat(culture, "{0}", currentDate);
+                    foreach (var (statsEnumerator, (done, lastValue)) in statsEnumerators)
+                    {
+                        if (!done && statsEnumerator.Current.Timestamp.Date <= currentDate)
+                        {
+                            var notDone = true;
+                            var nextValue = 0.0;
+                            do
+                            {
+                                nextValue = statsEnumerator.Current.Xp;
+                                notDone = statsEnumerator.MoveNext();
+                            } while (notDone && statsEnumerator.Current.Timestamp.Date <= currentDate);
+                            statsEnumerators[statsEnumerator] = (!notDone, nextValue);
+                            builder.AppendFormat(culture, "{0}{1}", csvSep, nextValue - lastValue);
+                        }
+                        else
+                        {
+                            builder.AppendFormat(culture, "{0}{1}", csvSep, 0.0);
+                        }
+                    }
+                    builder.AppendLine();
+                }
+            }
+            finally
+            {
+                foreach (var enumerator in statsEnumerators)
+                {
+                    enumerator.Key.Dispose();
+                }
+            }
+
+            Directory.CreateDirectory(statsPath);
+            await File.WriteAllTextAsync($"{statsPath}/ClanLeaderboardXpPerDay.csv", builder.ToString());
+            Console.WriteLine($"Saved xp per day dashboard for clan leaderboard");
         }
 
         static async Task SavePlayerStatsAsync(IEnumerable<Player> players, CultureInfo culture, string statsPath, char csvSep)
@@ -101,7 +218,7 @@ namespace BlockTanksStats
             }
         }
 
-        static async Task SaveCumulativeXpDashboardAsync(string clanTag, IEnumerable<Player> players, CultureInfo culture, string statsPath, string clanDashboardsPath, char csvSep)
+        static async Task SaveCumulativeXpDashboardAsync(string clanTag, IEnumerable<Player> players, CultureInfo culture, string statsPath, string clanDashboardsPath, char csvSep, DateTime now)
         {
             Console.WriteLine($"Saving cumulative xp dashboard for {clanTag}...");
 
@@ -158,7 +275,7 @@ namespace BlockTanksStats
             Console.WriteLine($"Saved cumulative xp dashboard for clan {clanTag}");
         }
 
-        static async Task SaveXpDashboardAsync(string clanTag, IEnumerable<Player> players, CultureInfo culture, string statsPath, string clanDashboardsPath, char csvSep)
+        static async Task SaveXpDashboardAsync(string clanTag, IEnumerable<Player> players, CultureInfo culture, string statsPath, string clanDashboardsPath, char csvSep, DateTime now)
         {
             Console.WriteLine($"Saving xp dashboard for {clanTag}...");
 
@@ -226,80 +343,84 @@ namespace BlockTanksStats
             CultureInfo culture,
             string statsPath,
             string clanDashboardsPath,
-            char csvSep)
+            char csvSep,
+            DateTime now)
         {
             Console.WriteLine($"Saving xp dashboard for {clanTag}...");
             --periodDays;
 
             players = players.Where(p => p.ClanTag == clanTag);
 
-            var firstDate = DateTime.Today.AddDays(-periodDays);
-            players = players.OrderByDescending(p =>
+            var firstDate = now.Date.AddDays(-periodDays);
+
+            IEnumerable<(Player, IEnumerable<double?>)> columns = players.Select(player =>
             {
-                var first = p.LeaderboardCompHistory.FirstOrDefault(l => l.Timestamp.Date >= firstDate);
-                if (first != null)
+                IEnumerable<double?> cells = new List<double?>();
+                using var statsEnumerator = player.LeaderboardCompHistory.GetEnumerator();
+                var done = false;
+                do
                 {
-                    var last = p.LeaderboardCompHistory.LastOrDefault();
-                    return last.Xp - first.Xp;
-                } else
+                    done = !statsEnumerator.MoveNext();
+                } while (!done && statsEnumerator.Current.Timestamp.Date < firstDate);
+
+                PlayerLeaderboardComp last = statsEnumerator.Current ?? default;
+                for (var currentDate = firstDate; currentDate <= now.Date; currentDate = currentDate.AddDays(days))
                 {
-                    return 0.0;
+                    if (!done && statsEnumerator.Current.Timestamp.Date <= currentDate)
+                    {
+                        var ignoreLast = (currentDate - last.Timestamp.Date).Days > days;
+                        var notDone = true;
+                        PlayerLeaderboardComp next = default;
+                        var prev = ignoreLast ? statsEnumerator.Current : last;
+
+                        do
+                        {
+                            next = statsEnumerator.Current;
+                            notDone = statsEnumerator.MoveNext();
+                        } while (notDone && statsEnumerator.Current.Timestamp.Date <= currentDate);
+                        (done, last) = (!notDone, next);
+                        cells = cells.Append(next.Xp - prev.Xp);
+                    }
+                    else
+                    {
+                        cells = cells.Append(null);
+                    }
                 }
-            }).ToList();
+                return (player, cells);
+            });
+
+            columns = columns.OrderByDescending(c => c.Item2.Sum()).ToList();
 
             var builder = new StringBuilder();
             builder.AppendFormat(culture, "{0}", nameof(PlayerLeaderboardComp.Timestamp));
-            foreach (var player in players)
+            foreach (var (player, values) in columns)
             {
                 builder.AppendFormat(culture, "{0}{1}", csvSep, player.DisplayName);
             }
             builder.AppendLine();
 
-            var statsEnumerators = new Dictionary<IEnumerator<PlayerLeaderboardComp>, (bool, double)>(players.Select(
-                p =>
-                {
-                    var enumerator = p.LeaderboardCompHistory.GetEnumerator();
-                    var done = false;
-
-                    do
-                    {
-                        done = !enumerator.MoveNext();
-                    } while (!done && enumerator.Current.Timestamp.Date < firstDate);
-                    return KeyValuePair.Create(enumerator, (done, enumerator.Current?.Xp ?? 0.0));
-                }));
+            var columnsEnumerators = columns
+                .Select(c => { var enumerator = c.Item2.GetEnumerator(); enumerator.MoveNext(); return enumerator; })
+                .ToList();
 
             try
             {
-                for (var currentDate = firstDate; currentDate <= DateTime.Today; currentDate = currentDate.AddDays(days))
+                for (var currentDate = firstDate; currentDate <= now.Date; currentDate = currentDate.AddDays(days))
                 {
                     builder.AppendFormat(culture, "{0}", currentDate);
-                    foreach (var (statsEnumerator, (done, lastValue)) in statsEnumerators)
+                    foreach (var statsEnumerator in columnsEnumerators)
                     {
-                        if (!done && statsEnumerator.Current.Timestamp.Date <= currentDate)
-                        {
-                            var notDone = true;
-                            var nextValue = 0.0;
-                            do
-                            {
-                                nextValue = statsEnumerator.Current.Xp;
-                                notDone = statsEnumerator.MoveNext();
-                            } while (notDone && statsEnumerator.Current.Timestamp.Date <= currentDate);
-                            statsEnumerators[statsEnumerator] = (!notDone, nextValue);
-                            builder.AppendFormat(culture, "{0}{1}", csvSep, nextValue - lastValue);
-                        }
-                        else
-                        {
-                            builder.AppendFormat(culture, "{0}{1}", csvSep, 0.0);
-                        }
+                        builder.AppendFormat(culture, "{0}{1}", csvSep, statsEnumerator.Current?.ToString(culture) ?? "-");
+                        statsEnumerator.MoveNext();
                     }
                     builder.AppendLine();
                 }
             }
             finally
             {
-                foreach (var enumerator in statsEnumerators)
+                foreach (var enumerator in columnsEnumerators)
                 {
-                    enumerator.Key.Dispose();
+                    enumerator.Dispose();
                 }
             }
 
@@ -307,6 +428,113 @@ namespace BlockTanksStats
             Directory.CreateDirectory(path);
             await File.WriteAllTextAsync($"{path}/XpPerDay.csv", builder.ToString());
             Console.WriteLine($"Saved xp per day dashboard for clan {clanTag}");
+        }
+
+        static async Task SaveKDRPerDaysDashboardAsync(
+            string clanTag,
+            IEnumerable<Player> players,
+            int days,
+            int periodDays,
+            CultureInfo culture,
+            string statsPath,
+            string clanDashboardsPath,
+            char csvSep,
+            DateTime now)
+        {
+            Console.WriteLine($"Saving KDR dashboard for {clanTag}...");
+            --periodDays;
+
+            players = players.Where(p => p.ClanTag == clanTag);
+
+            var firstDate = now.Date.AddDays(-periodDays);
+
+            IEnumerable<(Player, (double?, double?), IEnumerable<(double, double)?>)> columns = players.Select(player =>
+            {
+                IEnumerable<(double, double)?> cells = new List<(double, double)?>();
+                using var statsEnumerator = player.LeaderboardCompHistory.GetEnumerator();
+                var done = false;
+                do
+                {
+                    done = !statsEnumerator.MoveNext();
+                } while (!done && statsEnumerator.Current.Timestamp.Date < firstDate);
+
+                PlayerLeaderboardComp last = statsEnumerator.Current ?? default;
+                for (var currentDate = firstDate; currentDate <= now.Date; currentDate = currentDate.AddDays(days))
+                {
+                    if (!done && statsEnumerator.Current.Timestamp.Date <= currentDate)
+                    {
+                        var ignoreLast = (currentDate - last.Timestamp.Date).Days > days;
+                        var notDone = true;
+                        PlayerLeaderboardComp next = default;
+                        var prev = ignoreLast ? statsEnumerator.Current : last;
+
+                        do
+                        {
+                            next = statsEnumerator.Current;
+                            notDone = statsEnumerator.MoveNext();
+                        } while (notDone && statsEnumerator.Current.Timestamp.Date <= currentDate);
+                        (done, last) = (!notDone, next);
+                        cells = cells.Append((next.Kills - prev.Kills, next.Deaths - prev.Deaths));
+                    }
+                    else
+                    {
+                        cells = cells.Append(null);
+                    }
+                }
+
+                var kills = cells.Sum(cell => cell?.Item1);
+                var deaths = cells.Sum(cell => cell?.Item2);
+                return (player, (kills, deaths), cells);
+            });
+
+            columns = columns.OrderByDescending(column => column.Item2.Item1 / (column.Item2.Item2 == 0.0 ? 1.0 : column.Item2.Item2 ?? 1.0)).ToList();
+
+            var builder = new StringBuilder();
+            builder.Append("Total KD");
+            foreach (var (player, (kills, deaths), values) in columns)
+            {
+                var kdr = kills / (deaths == 0.0 ? 1.0 : deaths ?? 1.0);
+                builder.AppendFormat(culture, "{0}{1:N1} ({2}/{3})", csvSep, kdr, kills, deaths);
+            }
+            builder.AppendLine();
+
+            builder.AppendFormat(culture, "{0}", nameof(PlayerLeaderboardComp.Timestamp));
+            foreach (var (player, (kills, deaths), values) in columns)
+            {
+                builder.AppendFormat(culture, "{0}{1}", csvSep, player.DisplayName);
+            }
+            builder.AppendLine();
+
+            var columnsEnumerators = columns
+                .Select(c => { var enumerator = c.Item3.GetEnumerator(); enumerator.MoveNext(); return enumerator; })
+                .ToList();
+
+            try
+            {
+                for (var currentDate = firstDate; currentDate <= now.Date; currentDate = currentDate.AddDays(days))
+                {
+                    builder.AppendFormat(culture, "{0}", currentDate);
+                    foreach (var statsEnumerator in columnsEnumerators)
+                    {
+                        var kdr = statsEnumerator.Current?.Item1 / (statsEnumerator.Current?.Item2 == 0.0 ? 1.0 : statsEnumerator.Current?.Item2);
+                        builder.AppendFormat(culture, "{0}{1}({2}/{3})", csvSep, kdr.HasValue ? string.Format(culture, "{0:N1}", kdr) : "-", statsEnumerator.Current?.Item1, statsEnumerator.Current?.Item2);
+                        statsEnumerator.MoveNext();
+                    }
+                    builder.AppendLine();
+                }
+            }
+            finally
+            {
+                foreach (var enumerator in columnsEnumerators)
+                {
+                    enumerator.Dispose();
+                }
+            }
+
+            var path = $"{statsPath}/{clanTag}/{clanDashboardsPath}";
+            Directory.CreateDirectory(path);
+            await File.WriteAllTextAsync($"{path}/KDRPerDay.csv", builder.ToString());
+            Console.WriteLine($"Saved KDR per day dashboard for clan {clanTag}");
         }
     }
 }
