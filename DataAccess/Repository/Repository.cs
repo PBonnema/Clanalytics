@@ -18,7 +18,11 @@ namespace DataAccess.Repository
             var database = client.GetDatabase(settings.DatabaseName);
 
             _models = database.GetCollection<T>(collectionName);
-            _now = now;
+
+            // The AddTicks is necessary because now stores the time in greater accuracy than what is stored in the database (fractional milliseconds).
+            // By subtracting the fractional part, we make sure that _now will contain the exact same time as what is stored in the database
+            // This is necessary when we want to compare the timestamps in the database with _now afterwards.
+            _now = now.AddTicks(-now.TimeOfDay.Ticks % 10000);
         }
 
         public virtual async Task<IEnumerable<T>> GetAsync(CancellationToken cancellation = default) =>
@@ -33,7 +37,7 @@ namespace DataAccess.Repository
 
         public virtual async Task UpdateAsync(string id, T modelIn, CancellationToken cancellation = default)
         {
-            modelIn.Timestamp = _now;
+            modelIn.Timestamp = modelIn.Timestamp == default ? _now : modelIn.Timestamp;
             await _models.ReplaceOneAsync(model => model.Id == id, modelIn, cancellationToken: cancellation);
         }
 

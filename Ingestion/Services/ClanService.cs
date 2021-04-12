@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Ingestion.Services
 {
-    public class ClanService
+    public class ClanService : IClanService
     {
         private readonly IClanRepository _clanRepository;
 

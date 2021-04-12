@@ -1,5 +1,4 @@
-﻿using MigrateDatabase.Models;
-using MongoDB.Driver;
+﻿using DataAccess.Repository;
 using System;
 using System.Threading.Tasks;
 
@@ -19,14 +18,17 @@ namespace MigrateDatabase
                 case "Development": connectionString = "mongodb://root:example@localhost:27018"; break;
             }
 
-            var client = new MongoClient(connectionString);
-            var database = client.GetDatabase("BlockTanksStats");
+            var blockTanksStatsDatabaseSettings = new BlockTanksStatsDatabaseSettings(
+                ConnectionString: connectionString,
+                DatabaseName: "BlockTanksStats",
+                PlayersCollectionName: "Players",
+                ClansCollectionName: "Clans"
+            );
+            var playerRepository = new PlayerMigrationsRepository(blockTanksStatsDatabaseSettings, DateTime.UtcNow);
 
-            var players = database.GetCollection<Player>("Players");
-
-            foreach (var player in await (await players.FindAsync(_ => true)).ToListAsync())
+            foreach (var player in await playerRepository.GetAsync())
             {
-                await players.ReplaceOneAsync(p => p.PlayerId == player.PlayerId, player);
+                await playerRepository.UpdateByPlayerIdAsync(player.PlayerId, player);
             }
         }
     }

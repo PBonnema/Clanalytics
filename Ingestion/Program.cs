@@ -1,9 +1,9 @@
 ﻿using DataAccess.Repository;
 using Ingestion.Agents;
 using Ingestion.Services;
+using Microsoft.Extensions.Logging;
 using Polly;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -15,7 +15,14 @@ namespace Ingestion
         static async Task Main()
         {
             var now = DateTime.UtcNow;
-            Console.WriteLine($"Initalizing at {now}...");
+
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+            });
+            var logger = loggerFactory.CreateLogger<Program>();
+
+            logger.LogInformation($"Initalizing at {now}...");
             var sw = Stopwatch.StartNew();
 
             string connectionString = "";
@@ -35,7 +42,6 @@ namespace Ingestion
             var playerRepository = new PlayerRepository(blockTanksStatsDatabaseSettings, now);
             var clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
 
-            var playerService = new PlayerService(playerRepository);
             var clanService = new ClanService(clanRepository);
 
             var httpRequestExceptionPolicy = Policy.Handle<HttpRequestException>()
@@ -52,20 +58,18 @@ namespace Ingestion
                 SeleniumConnectionRetryPeriodSec: 2
             ), "https://blocktanks.io");
 
-            await FetchClanLeaderboardStats(clanService, blockTanksPlayerAPIAgent);
+            var playerService = new PlayerService(playerRepository, blockTanksPlayerAPIAgent, scrapeBTPageService, loggerFactory.CreateLogger<PlayerService>());
 
-            await FetchClanMemberStats(playerService, blockTanksPlayerAPIAgent, scrapeBTPageService, new[] {
-                "RIOT",
-                "RIOT2",
-                "SWIFT",
-                "ZR",
-                "DRONE",
-                "MERC",
-                "KRYPTO",
-            });
+            await FetchClanLeaderboardStats(clanService, blockTanksPlayerAPIAgent, logger);
 
-            await FetchTrackedPlayerStats(playerService, blockTanksPlayerAPIAgent, scrapeBTPageService, new[]
+            // TODO when a player is updated, all it's stats are overwritting.
+            // This means that if a player is both tracked and is a member of a tracked clan, and we first fetch it as a tracked player
+            // And then as a member of a tracked clan, the 2e update will remain in the database and the player will be seen as a member of it's clan.
+            // We prefer that so fetch clans last.
+            var trackedPlayerNames = new[]
             {
+                "Jupiter",
+                "Jupiter alt",
                 "Howie",
                 "Tankking",
                 "Magpie",
@@ -85,55 +89,34 @@ namespace Ingestion
                 "yrene",
                 "temp",
                 "Luinlanthir",
+                "Tank tsunami666",
+                "Lubiniio",
+                "Cidar",
+            };
+
+            await playerService.FetchTrackedPlayerStats(trackedPlayerNames);
+
+            await playerService.FetchClanMemberStats(new[] {
+                "RIOT",
+                "RIOT2",
+                "ZR",
+                "DRONE",
+                "MERC",
+                "KRYPTO",
+                "FOLDIN",
             });
 
             sw.Stop();
-            Console.WriteLine($"...Done fetching in {sw.Elapsed}. Exiting.");
+            logger.LogInformation($"...Done fetching in {sw.Elapsed}. Exiting.");
         }
 
-        private static async Task FetchClanLeaderboardStats(ClanService clanService, BlockTanksAPIAgent blockTanksPlayerAPIAgent)
+        private static async Task FetchClanLeaderboardStats(ClanService clanService, BlockTanksAPIAgent blockTanksPlayerAPIAgent, ILogger<Program> logger)
         {
-            Console.WriteLine($"Fetching clan leaderboard...");
+            logger.LogInformation($"Fetching clan leaderboard...");
             var clans = await blockTanksPlayerAPIAgent.FetchClanLeaderboard();
             foreach (var clan in clans)
             {
                 await clanService.AddStatsForClanAsync(clan);
-            }
-        }
-
-        private static async Task FetchClanMemberStats(PlayerService playerService, BlockTanksAPIAgent blockTanksPlayerAPIAgent, ScrapeBTPageService scrapeBTPageService, IEnumerable<string> clanTags)
-        {
-            foreach (var clanTag in clanTags)
-            {
-                Console.WriteLine($"Fetching {clanTag} members...");
-                var playerNames = await scrapeBTPageService.GetClanMembersAsync(clanTag);
-
-                Console.WriteLine($"Fetching player stats of {playerNames.Count} players...");
-                foreach (var playerName in playerNames)
-                {
-                    if (!await scrapeBTPageService.ArePlayerStatsHidden(playerName))
-                    {
-                        var player = await blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName);
-                        player.ClanTag = clanTag;
-                        await playerService.AddStatsForPlayerAsync(player);
-                        Console.WriteLine($"Saved stats for player {playerName}");
-                    }
-                }
-            }
-        }
-
-        private static async Task FetchTrackedPlayerStats(PlayerService playerService, BlockTanksAPIAgent blockTanksPlayerAPIAgent, ScrapeBTPageService scrapeBTPageService, IEnumerable<string> trackedPlayerNames)
-        {
-            Console.WriteLine($"Fetching player stats of tracked players...");
-            foreach (var playerName in trackedPlayerNames)
-            {
-                if (!await scrapeBTPageService.ArePlayerStatsHidden(playerName))
-                {
-                    var player = await blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName);
-                    player.ClanTag = "Tracked Player";
-                    await playerService.AddStatsForPlayerAsync(player);
-                    Console.WriteLine($"Saved stats for player {playerName}");
-                }
             }
         }
     }

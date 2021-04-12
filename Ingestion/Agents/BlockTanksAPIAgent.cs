@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Ingestion.Agents
 {
-    public class BlockTanksAPIAgent : IDisposable
+    public class BlockTanksAPIAgent : IBlockTanksAPIAgent
     {
         private readonly HttpClient _httpClient;
         private readonly IAsyncPolicy _pollyPolicy;

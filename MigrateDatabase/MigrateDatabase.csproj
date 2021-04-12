@@ -6,13 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Models\Clan.cs" />
-    <Compile Remove="Models\ClanLeaderboardComp.cs" />
-    <Compile Remove="Models\Community.cs" />
-    <Compile Remove="Models\CompletedGame.cs" />
-    <Compile Remove="Models\NameStatus.cs" />
-    <Compile Remove="Models\PlayerLeaderboardComp.cs" />
-    <Compile Remove="Models\XPInfo.cs" />
+    <Compile Remove="MigrationModels\Clan.cs" />
+    <Compile Remove="MigrationModels\ClanLeaderboardComp.cs" />
+    <Compile Remove="MigrationModels\Community.cs" />
+    <Compile Remove="MigrationModels\CompletedGame.cs" />
+    <Compile Remove="MigrationModels\NameStatus.cs" />
+    <Compile Remove="MigrationModels\PlayerLeaderboardComp.cs" />
+    <Compile Remove="MigrationModels\XPInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -28,7 +28,7 @@ namespace DataAccess.Repository
 
         public async Task UpdateByClanIdAsync(string clanId, Clan clanIn, CancellationToken cancellation = default)
         {
-            clanIn.Timestamp = _now;
+            clanIn.Timestamp = clanIn.Timestamp == default ? _now : clanIn.Timestamp;
 
             foreach (var leaderboardCompHistory in clanIn.LeaderboardCompHistory)
             {

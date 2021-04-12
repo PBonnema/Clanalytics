@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Ingestion.Services
 {
-    public class ScrapeBTPageService : IDisposable
+    public class ScrapeBTPageService : IScrapeBTPageService
     {
         public record SeleniumConfig(bool UseRemoteSeleniumChrome, string SeleniumChromeUrl, int SeleniumConnectionRetries, double SeleniumConnectionRetryPeriodSec);
 
@@ -64,7 +64,7 @@ namespace Ingestion.Services
             return memberListItems.Select(m => m.Name()).ToList();
         }
 
-        public async Task<bool> ArePlayerStatsHidden(string playerName, CancellationToken cancellation = default)
+        public async Task<bool> ArePlayerStatsHiddenAsync(string playerName, CancellationToken cancellation = default)
         {
             return (await App.ViewPlayerPageAsync(playerName, _webDriver, _baseUrl, cancellation)).AreStatsHidden();
         }
@@ -72,6 +72,7 @@ namespace Ingestion.Services
         public void Dispose()
         {
             _webDriver.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -73,6 +73,7 @@ namespace BlockTanksStats
                 "DRONE",
                 "MERC",
                 "KRYPTO",
+                "FOLDIN",
                 "Tracked Player",
             })
             {
