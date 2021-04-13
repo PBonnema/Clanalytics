@@ -63,9 +63,19 @@ namespace Ingestion
             await FetchClanLeaderboardStats(clanService, blockTanksPlayerAPIAgent, logger);
 
             // TODO when a player is updated, all it's stats are overwritting.
-            // This means that if a player is both tracked and is a member of a tracked clan, and we first fetch it as a tracked player
-            // And then as a member of a tracked clan, the 2e update will remain in the database and the player will be seen as a member of it's clan.
-            // We prefer that so fetch clans last.
+            // This means that if a player is both tracked and is a member of a tracked clan, and we first fetch it as a member of a clan
+            // And then as a tracked player. The 1e update will remain in the database and the player will be seen as a member of it's clan.
+            // We prefer that so fetch clans first.
+            await playerService.FetchClanMemberStats(new[] {
+                "RIOT",
+                "RIOT2",
+                "ZR",
+                "DRONE",
+                "MERC",
+                "KRYPTO",
+                "FOLDIN",
+            });
+
             var trackedPlayerNames = new[]
             {
                 "Jupiter",
@@ -92,19 +102,10 @@ namespace Ingestion
                 "Tank tsunami666",
                 "Lubiniio",
                 "Cidar",
+                "XXHyperGamerXX",
             };
 
             await playerService.FetchTrackedPlayerStats(trackedPlayerNames);
-
-            await playerService.FetchClanMemberStats(new[] {
-                "RIOT",
-                "RIOT2",
-                "ZR",
-                "DRONE",
-                "MERC",
-                "KRYPTO",
-                "FOLDIN",
-            });
 
             sw.Stop();
             logger.LogInformation($"...Done fetching in {sw.Elapsed}. Exiting.");
