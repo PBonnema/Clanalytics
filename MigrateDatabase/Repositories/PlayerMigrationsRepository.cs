@@ -5,9 +5,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MigrateDatabase
+namespace MigrateDatabase.Repositories
 {
-    public class PlayerMigrationsRepository : Repository<PlayerMigrations>
+    public class PlayerMigrationsRepository : Repository<PlayerMigrations>, IPlayerMigrationsRepository
     {
         public PlayerMigrationsRepository(BlockTanksStatsDatabaseSettings settings, DateTime now)
             : base(settings, settings.PlayersCollectionName, now)

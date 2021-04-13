@@ -1,4 +1,20 @@
 services:
+    migrate-database:
+        profiles:
+            - migrate-database
+        depends_on:
+            - mongo
+        build:
+            context: ./
+            dockerfile: MigrateDatabase/Dockerfile
+            args:
+                MigrateDatabaseDir: MigrateDatabase
+                DataAccessDir: DataAccess
+        environment:
+            ENVIRONMENT: Production
+        networks:
+            - nat
+
     mongo-test:
         profiles:
             - only-db-test
@@ -36,6 +52,7 @@ services:
             - only-db
             - ingestion
             - dashboard
+            - migrate-database
         image: mongo
         restart: always
         ports:
@@ -67,6 +84,7 @@ services:
     mongo-express:
         profiles:
             - only-db
+            - migrate-database
         depends_on:
             - mongo
         image: mongo-express
