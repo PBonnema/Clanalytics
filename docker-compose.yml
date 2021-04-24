@@ -21,6 +21,7 @@ services:
             - transfer-db-test
             - ingestion-test
             - dashboard-test
+            - ingestion-dev
         image: mongo
         restart: always
         ports:
@@ -69,6 +70,7 @@ services:
         profiles:
             - only-db-test
             - ingestion-test
+            - ingestion-dev
         depends_on:
             - mongo-test
         image: mongo-express
@@ -100,6 +102,7 @@ services:
         profiles:
             - ingestion
             - ingestion-test
+            - ingestion-dev
         image: selenium/standalone-chrome-debug
         volumes:
             - /dev/shm:/dev/shm # This is recommended by the readme of the image. https://github.com/SeleniumHQ/docker-selenium
@@ -128,8 +131,11 @@ services:
                 DataAccessDir: DataAccess
         environment:
             ENVIRONMENT: Test
+            LOG_PATH: ./Logs
         networks:
             - nat-test
+        volumes:
+            - ./Logs:/app/Logs
 
     ingestion:
         profiles:
@@ -145,8 +151,11 @@ services:
                 DataAccessDir: DataAccess
         environment:
             ENVIRONMENT: Production
+            LOG_PATH: ./Logs
         networks:
             - nat
+        volumes:
+            - ./Logs:/app/Logs
 
     blocktanksstats-test:
         profiles:
