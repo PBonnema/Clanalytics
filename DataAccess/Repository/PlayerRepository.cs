@@ -45,9 +45,11 @@ namespace DataAccess.Repository
 
         public async Task<IEnumerable<string>> FilterPlayersNotInClanAsync(IEnumerable<string> playerNames, CancellationToken cancellation = default)
         {
-            return (await GetAllByNamesAsync(playerNames, cancellation))
-                .Where(p => p.LeaderboardCompHistory.All(l => l.Timestamp < _now))
-                .Select(p => p.DisplayName).ToList();
+            return playerNames
+                .Except((await GetAllByNamesAsync(playerNames, cancellation))
+                    .Where(p => p.LeaderboardCompHistory.Any(l => l.Timestamp >= _now))
+                    .Select(p => p.DisplayName)
+                ).ToList();
         }
     }
 }
