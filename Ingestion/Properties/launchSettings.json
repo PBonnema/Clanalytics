@@ -3,7 +3,8 @@
     "Ingestion": {
       "commandName": "Project",
       "environmentVariables": {
-        "ENVIRONMENT": "Development"
+        "ENVIRONMENT": "Development",
+        "LOG_PATH": "C:/Users/peterB/repositories/hobby projecten/BlockTanksStats/Logs"
       }
     }
   }

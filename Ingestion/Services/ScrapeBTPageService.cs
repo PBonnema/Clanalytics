@@ -27,6 +27,12 @@ namespace Ingestion.Services
             IWebDriver driver = null;
             if (seleniumConfig.UseRemoteSeleniumChrome)
             {
+                chromeOptions.AddArguments(new List<string> {
+                    "--headless",
+                    "--disable-dev-shm-usage",
+                    "--no-sandbox",
+                });
+
                 // Connect to the selenium container with retries.
                 var policy = Policy.Handle<WebDriverException>()
                   .WaitAndRetry(seleniumConfig.SeleniumConnectionRetries,
