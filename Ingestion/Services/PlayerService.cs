@@ -1,7 +1,7 @@
 ﻿using DataAccess.Models;
 using DataAccess.Repository;
 using Ingestion.Agents;
-using Microsoft.Extensions.Logging;
+using Serilog;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,9 +14,9 @@ namespace Ingestion.Services
         private readonly IPlayerRepository _playerRepository;
         private readonly IBlockTanksAPIAgent _blockTanksPlayerAPIAgent;
         private readonly IScrapeBTPageService _scrapeBTPageService;
-        private readonly ILogger<PlayerService> _logger;
+        private readonly ILogger _logger;
 
-        public PlayerService(IPlayerRepository playerRepository, IBlockTanksAPIAgent blockTanksPlayerAPIAgent, IScrapeBTPageService scrapeBTPageService, ILogger<PlayerService> logger)
+        public PlayerService(IPlayerRepository playerRepository, IBlockTanksAPIAgent blockTanksPlayerAPIAgent, IScrapeBTPageService scrapeBTPageService, ILogger logger)
         {
             _playerRepository = playerRepository;
             _blockTanksPlayerAPIAgent = blockTanksPlayerAPIAgent;
@@ -43,7 +43,7 @@ namespace Ingestion.Services
         {
             foreach (var clanTag in clanTags)
             {
-                _logger.LogInformation($"Fetching {clanTag} members...");
+                _logger.Information($"Fetching {clanTag} members...");
                 var playerNames = await _scrapeBTPageService.GetClanMembersAsync(clanTag, cancellation);
                 await FetchPlayersStats(playerNames, clanTag, cancellation);
             }
@@ -51,7 +51,7 @@ namespace Ingestion.Services
 
         public async Task FetchTrackedPlayerStats(IEnumerable<string> trackedPlayerNames, CancellationToken cancellation = default)
         {
-            _logger.LogInformation($"Fetching stats of tracked players...");
+            _logger.Information($"Fetching stats of tracked players...");
             await FetchPlayersStats(trackedPlayerNames, "Tracked Player", cancellation);
         }
 
@@ -60,7 +60,7 @@ namespace Ingestion.Services
             // Prevent players from being fetched twice if they are both tracked separately and in a tracked clan
             playerNames = await _playerRepository.FilterPlayersNotInClanAsync(playerNames, cancellation);
 
-            _logger.LogInformation($"Fetching stats of {playerNames.Count()} players...");
+            _logger.Information($"Fetching stats of {playerNames.Count()} players...");
             foreach (var playerName in playerNames)
             {
                 if (!await _scrapeBTPageService.ArePlayerStatsHiddenAsync(playerName, cancellation))
@@ -68,11 +68,11 @@ namespace Ingestion.Services
                     var player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
                     player.ClanTag = clanTag;
                     await AddStatsForPlayerAsync(player, cancellation);
-                    _logger.LogInformation($"Saved stats for player {playerName}");
+                    _logger.Information($"Saved stats for player {playerName}");
                 }
                 else
                 {
-                    _logger.LogInformation($"{playerName} has their stats hidden or isn't found.");
+                    _logger.Warning($"{playerName} has their stats hidden or isn't found.");
                 }
             }
         }

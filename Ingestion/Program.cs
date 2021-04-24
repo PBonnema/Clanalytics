@@ -1,8 +1,9 @@
 ﻿using DataAccess.Repository;
 using Ingestion.Agents;
 using Ingestion.Services;
-using Microsoft.Extensions.Logging;
 using Polly;
+using Serilog;
+using Serilog.Events;
 using System;
 using System.Diagnostics;
 using System.Net.Http;
@@ -16,104 +17,136 @@ namespace Ingestion
         {
             var now = DateTime.UtcNow;
 
-            using var loggerFactory = LoggerFactory.Create(builder =>
-            {
-                builder.AddConsole();
-            });
-            var logger = loggerFactory.CreateLogger<Program>();
+            var logFilePath = Environment.GetEnvironmentVariable("LOG_PATH");
+            using var logger = new LoggerConfiguration()
+                .WriteTo.Console(LogEventLevel.Warning)
+                .WriteTo.File($"{logFilePath}/Ingestion.txt", LogEventLevel.Verbose, rollingInterval: RollingInterval.Day)
+                .CreateLogger();
 
-            logger.LogInformation($"Initalizing at {now}...");
-            var sw = Stopwatch.StartNew();
+            logger.Information($"Initalizing at {now}...");
 
-            string connectionString = "";
-            switch (Environment.GetEnvironmentVariable("ENVIRONMENT"))
+            try
             {
-                case "Production": connectionString = "mongodb://root:example@mongo:27017"; break;
-                case "Test": connectionString = "mongodb://root:example@mongo-test:27017"; break;
-                case "Development": connectionString = "mongodb://root:example@localhost:27018"; break;
+                var sw = Stopwatch.StartNew();
+
+                var connectionString = "";
+                var seleniumChromeUrl = "";
+                switch (Environment.GetEnvironmentVariable("ENVIRONMENT"))
+                {
+                    case "Production":
+                        connectionString = "mongodb://root:example@mongo:27017";
+                        seleniumChromeUrl = "http://selenium-chrome:4444/wd/hub";
+                        break;
+                    case "Test":
+                        connectionString = "mongodb://root:example@mongo-test:27017";
+                        seleniumChromeUrl = "http://selenium-chrome:4444/wd/hub";
+                        break;
+                    case "Development":
+                        connectionString = "mongodb://root:example@localhost:27018";
+                        seleniumChromeUrl = "http://localhost:4444/wd/hub";
+                        break;
+                }
+
+                var blockTanksStatsDatabaseSettings = new BlockTanksStatsDatabaseSettings(
+                    ConnectionString: connectionString,
+                    DatabaseName: "BlockTanksStats",
+                    PlayersCollectionName: "Players",
+                    ClansCollectionName: "Clans"
+                );
+                var playerRepository = new PlayerRepository(blockTanksStatsDatabaseSettings, now);
+                var clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
+
+                var clanService = new ClanService(clanRepository);
+
+                var httpRequestExceptionPolicy = Policy.Handle<HttpRequestException>()
+                  .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(60));
+                var taskCanceledExceptionPolicy = Policy.Handle<TaskCanceledException>()
+                  .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(60));
+                var pollyPolicy = httpRequestExceptionPolicy.WrapAsync(taskCanceledExceptionPolicy);
+
+                using var blockTanksPlayerAPIAgent = new BlockTanksAPIAgent("https://blocktanks.io", pollyPolicy);
+                using var scrapeBTPageService = new ScrapeBTPageService(new ScrapeBTPageService.SeleniumConfig(
+                    UseRemoteSeleniumChrome: Environment.GetEnvironmentVariable("ENVIRONMENT") != "Development",
+                    SeleniumChromeUrl: seleniumChromeUrl,
+                    SeleniumConnectionRetries: 5,
+                    SeleniumConnectionRetryPeriodSec: 2
+                ), "https://blocktanks.io");
+
+                var playerService = new PlayerService(playerRepository, blockTanksPlayerAPIAgent, scrapeBTPageService, logger.ForContext<PlayerService>());
+
+                await FetchClanLeaderboardStats(clanService, blockTanksPlayerAPIAgent, logger);
+
+                // TODO when a player is updated, all it's stats are overwritting.
+                // This means that if a player is both tracked and is a member of a tracked clan, and we first fetch it as a member of a clan
+                // And then as a tracked player. The 1e update will remain in the database and the player will be seen as a member of it's clan.
+                // We prefer that so fetch clans first.
+                await playerService.FetchClanMemberStats(new[] {
+                    "RIOT",
+                    "RIOT2",
+                    "ZR",
+                    "DRONE",
+                    "MERC",
+                    "KRYPTO",
+                    "FOLDIN",
+                    "SPACE",
+                });
+
+                var trackedPlayerNames = new[]
+                {
+                    "Jupiter",
+                    "Jupiter alt",
+                    "Howie",
+                    "Tankking",
+                    "Magpie",
+                    "Alaska",
+                    "LORDEVIL",
+                    "RICO",
+                    "boriin",
+                    "m157",
+                    "VAATHI",
+                    "fethi",
+                    "atuka",
+                    "Ruben123",
+                    "otsosi",
+                    "cube",
+                    "mg123ok",
+                    "magic_exe",
+                    "yrene",
+                    "temp",
+                    "Luinlanthir",
+                    "Tank tsunami666",
+                    "Lubiniio",
+                    "Cidar",
+                    "XXHyperGamerXX",
+                    "GabGaming Pro38",
+                    "sub-zero",
+                    "JokiPau",
+                    "fuinloce",
+                    "HD Gamer",
+                    "_RIOT_ fffffffy",
+                    "9205672",
+                    "-Xeno-",
+                    "718",
+                    "IHasZero",
+                    "Colonial",
+                    "xRIOTx",
+                };
+
+                await playerService.FetchTrackedPlayerStats(trackedPlayerNames);
+
+                sw.Stop();
+                logger.Information($"...Done fetching in {sw.Elapsed}. Exiting.");
             }
-
-            var blockTanksStatsDatabaseSettings = new BlockTanksStatsDatabaseSettings(
-                ConnectionString: connectionString,
-                DatabaseName: "BlockTanksStats",
-                PlayersCollectionName: "Players",
-                ClansCollectionName: "Clans"
-            );
-            var playerRepository = new PlayerRepository(blockTanksStatsDatabaseSettings, now);
-            var clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
-
-            var clanService = new ClanService(clanRepository);
-
-            var httpRequestExceptionPolicy = Policy.Handle<HttpRequestException>()
-              .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(60));
-            var taskCanceledExceptionPolicy = Policy.Handle<TaskCanceledException>()
-              .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(60));
-            var pollyPolicy = httpRequestExceptionPolicy.WrapAsync(taskCanceledExceptionPolicy);
-
-            using var blockTanksPlayerAPIAgent = new BlockTanksAPIAgent("https://blocktanks.io", pollyPolicy);
-            using var scrapeBTPageService = new ScrapeBTPageService(new ScrapeBTPageService.SeleniumConfig(
-                UseRemoteSeleniumChrome: Environment.GetEnvironmentVariable("ENVIRONMENT") != "Development",
-                SeleniumChromeUrl: "http://selenium-chrome:4444/wd/hub",
-                SeleniumConnectionRetries: 5,
-                SeleniumConnectionRetryPeriodSec: 2
-            ), "https://blocktanks.io");
-
-            var playerService = new PlayerService(playerRepository, blockTanksPlayerAPIAgent, scrapeBTPageService, loggerFactory.CreateLogger<PlayerService>());
-
-            await FetchClanLeaderboardStats(clanService, blockTanksPlayerAPIAgent, logger);
-
-            // TODO when a player is updated, all it's stats are overwritting.
-            // This means that if a player is both tracked and is a member of a tracked clan, and we first fetch it as a member of a clan
-            // And then as a tracked player. The 1e update will remain in the database and the player will be seen as a member of it's clan.
-            // We prefer that so fetch clans first.
-            await playerService.FetchClanMemberStats(new[] {
-                "RIOT",
-                "RIOT2",
-                "ZR",
-                "DRONE",
-                "MERC",
-                "KRYPTO",
-                "FOLDIN",
-            });
-
-            var trackedPlayerNames = new[]
+            catch (Exception e)
             {
-                "Jupiter",
-                "Jupiter alt",
-                "Howie",
-                "Tankking",
-                "Magpie",
-                "Alaska",
-                "LORDEVIL",
-                "RICO",
-                "boriin",
-                "m157",
-                "VAATHI",
-                "fethi",
-                "atuka",
-                "Ruben123",
-                "otsosi",
-                "cube",
-                "mg123ok",
-                "magic_exe",
-                "yrene",
-                "temp",
-                "Luinlanthir",
-                "Tank tsunami666",
-                "Lubiniio",
-                "Cidar",
-                "XXHyperGamerXX",
-            };
-
-            await playerService.FetchTrackedPlayerStats(trackedPlayerNames);
-
-            sw.Stop();
-            logger.LogInformation($"...Done fetching in {sw.Elapsed}. Exiting.");
+                logger.Fatal($"...An exception occurred: ${e}");
+                throw;
+            }
         }
 
-        private static async Task FetchClanLeaderboardStats(ClanService clanService, BlockTanksAPIAgent blockTanksPlayerAPIAgent, ILogger<Program> logger)
+        private static async Task FetchClanLeaderboardStats(ClanService clanService, BlockTanksAPIAgent blockTanksPlayerAPIAgent, ILogger logger)
         {
-            logger.LogInformation($"Fetching clan leaderboard...");
+            logger.Information($"Fetching clan leaderboard...");
             var clans = await blockTanksPlayerAPIAgent.FetchClanLeaderboard();
             foreach (var clan in clans)
             {
