@@ -52,7 +52,7 @@ namespace BlockTanksStats
             var _clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
             var csvSep = ';';
             var days = 1;
-            var periodDays = 14;
+            var periodLengthDays = 14;
 
             if (Directory.Exists(statsPath))
             {
@@ -77,11 +77,11 @@ namespace BlockTanksStats
                 "Tracked Player",
             })
             {
-                await SaveClanDashboardsAsync(clanTag, players, days, periodDays, culture, statsPath, clanDashboardsPath, csvSep, now);
+                await SaveClanDashboardsAsync(clanTag, players, days, periodLengthDays, culture, statsPath, clanDashboardsPath, csvSep, now);
             }
 
             var clans = await _clanRepository.GetAsync();
-            await SaveClanLeaderboardAsync(clans, days, periodDays, culture, statsPath, csvSep, now);
+            await SaveClanLeaderboardAsync(clans, days, periodLengthDays, culture, statsPath, csvSep, now);
 
             await SavePlayerStatsAsync(players, culture, statsPath, csvSep);
 
@@ -93,15 +93,15 @@ namespace BlockTanksStats
             string clanTag,
             IEnumerable<Player> players,
             int days,
-            int periodDays,
+            int periodLengthDays,
             CultureInfo culture,
             string statsPath,
             string clanDashboardsPath,
             char csvSep,
             DateTime now)
         {
-            await SaveKDRPerDaysDashboardAsync(clanTag, players, days, periodDays, culture, statsPath, clanDashboardsPath, csvSep, now);
-            await SaveXpPerDaysDashboardAsync(clanTag, players, days, periodDays, culture, statsPath, clanDashboardsPath, csvSep, now);
+            await SaveKDRPerDaysDashboardAsync(clanTag, players, days, periodLengthDays, culture, statsPath, clanDashboardsPath, csvSep, now);
+            await SaveXpPerDaysDashboardAsync(clanTag, players, days, periodLengthDays, culture, statsPath, clanDashboardsPath, csvSep, now);
             await SaveXpDashboardAsync(clanTag, players, culture, statsPath, clanDashboardsPath, csvSep, now);
             await SaveCumulativeXpDashboardAsync(clanTag, players, culture, statsPath, clanDashboardsPath, csvSep, now);
         }
@@ -109,17 +109,16 @@ namespace BlockTanksStats
         static async Task SaveClanLeaderboardAsync(
             IEnumerable<Clan> clans,
             int days,
-            int periodDays,
+            int periodLengthDays,
             CultureInfo culture,
             string statsPath,
             char csvSep,
             DateTime now)
         {
             Console.WriteLine("Saving clan leaderboard...");
+            --periodLengthDays;
 
-            --periodDays;
-
-            var firstDate = now.Date.AddDays(-periodDays);
+            var firstDate = now.Date.AddDays(-periodLengthDays);
             clans = clans.OrderByDescending(p =>
             {
                 var first = p.LeaderboardCompHistory.FirstOrDefault(l => l.Timestamp.Date >= firstDate);
@@ -135,6 +134,52 @@ namespace BlockTanksStats
             }).ToList();
 
             var builder = new StringBuilder();
+            builder.Append("Current Total XP");
+            foreach (var clan in clans)
+            {
+                builder.AppendFormat(culture, "{0}{1}", csvSep, clan.LeaderboardCompHistory.LastOrDefault()?.Xp ?? 0.0);
+            }
+            builder.AppendLine();
+
+            builder.Append("Days until catchup");
+            var riotClan = clans.Single(c => c.Tag == "RIOT");
+            var firstRiotStats = riotClan.LeaderboardCompHistory.FirstOrDefault(l => l.Timestamp >= firstDate);
+            var riotAvgXp = 0.0;
+            // Skip today as this day isn't over yet.
+            var riotClanStats = riotClan.LeaderboardCompHistory.LastOrDefault(l => l.Timestamp < now.Date);
+            if (firstRiotStats != null)
+            {
+                riotAvgXp = (riotClanStats.Xp - firstRiotStats.Xp) / periodLengthDays;
+            }
+
+            foreach (var clan in clans)
+            {
+                var daysUntilCatchup = 0.0;
+                var firstClanStats = clan.LeaderboardCompHistory.FirstOrDefault(l => l.Timestamp >= firstDate);
+                bool print = false;
+                if (firstClanStats != null)
+                {
+                    // Skip today as this day isn't over yet.
+                    var clanStats = clan.LeaderboardCompHistory.LastOrDefault(l => l.Timestamp < now.Date);
+                    if (clanStats != null)
+                    {
+                        var clanAvgXp = (clanStats.Xp - firstClanStats.Xp) / periodLengthDays;
+                        daysUntilCatchup = (clanStats.Xp - riotClanStats.Xp) / (riotAvgXp - clanAvgXp);
+                        print = riotAvgXp > clanAvgXp == clanStats.Xp > riotClanStats.Xp && clan.Tag != riotClan.Tag;
+                    }
+                }
+
+                if (print)
+                {
+                    builder.AppendFormat(culture, "{0}{1}", csvSep, daysUntilCatchup);
+                }
+                else
+                {
+                    builder.AppendFormat(culture, "{0}-", csvSep);
+                }
+            }
+            builder.AppendLine();
+
             builder.AppendFormat(culture, "{0}", nameof(PlayerLeaderboardComp.Timestamp));
             foreach (var clan in clans)
             {
@@ -340,7 +385,7 @@ namespace BlockTanksStats
             string clanTag,
             IEnumerable<Player> players,
             int days,
-            int periodDays,
+            int periodLengthDays,
             CultureInfo culture,
             string statsPath,
             string clanDashboardsPath,
@@ -348,11 +393,11 @@ namespace BlockTanksStats
             DateTime now)
         {
             Console.WriteLine($"Saving xp dashboard for {clanTag}...");
-            --periodDays;
+            --periodLengthDays;
 
             players = players.Where(p => p.ClanTag == clanTag);
 
-            var firstDate = now.Date.AddDays(-periodDays);
+            var firstDate = now.Date.AddDays(-periodLengthDays);
 
             IEnumerable<(Player, IEnumerable<double?>)> columns = players.Select(player =>
             {
@@ -435,7 +480,7 @@ namespace BlockTanksStats
             string clanTag,
             IEnumerable<Player> players,
             int days,
-            int periodDays,
+            int periodLengthDays,
             CultureInfo culture,
             string statsPath,
             string clanDashboardsPath,
@@ -443,11 +488,11 @@ namespace BlockTanksStats
             DateTime now)
         {
             Console.WriteLine($"Saving KDR dashboard for {clanTag}...");
-            --periodDays;
+            --periodLengthDays;
 
             players = players.Where(p => p.ClanTag == clanTag);
 
-            var firstDate = now.Date.AddDays(-periodDays);
+            var firstDate = now.Date.AddDays(-periodLengthDays);
 
             IEnumerable<(Player, (double?, double?), IEnumerable<(double, double)?>)> columns = players.Select(player =>
             {
