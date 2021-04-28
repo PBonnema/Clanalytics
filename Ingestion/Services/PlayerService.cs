@@ -68,7 +68,7 @@ namespace Ingestion.Services
                     var player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
                     player.ClanTag = clanTag;
                     await AddStatsForPlayerAsync(player, cancellation);
-                    _logger.Information($"Saved stats for player {playerName}");
+                    _logger.Debug($"Saved stats for player {playerName}");
                 }
                 else
                 {

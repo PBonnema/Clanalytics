@@ -68,12 +68,16 @@ namespace BlockTanksStats
             foreach(var clanTag in new[] {
                 "RIOT",
                 "RIOT2",
-                "SWIFT",
                 "ZR",
                 "DRONE",
                 "MERC",
                 "KRYPTO",
                 "FOLDIN",
+                "SPACE",
+                "INQ",
+                "CAVERA",
+                "SENTRY",
+                "PRO",
                 "Tracked Player",
             })
             {

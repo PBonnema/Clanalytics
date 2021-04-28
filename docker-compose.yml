@@ -131,7 +131,7 @@ services:
                 DataAccessDir: DataAccess
         environment:
             ENVIRONMENT: Test
-            LOG_PATH: ./Logs
+            LOG_PATH: /app/Logs/Test
         networks:
             - nat-test
         volumes:
@@ -151,7 +151,7 @@ services:
                 DataAccessDir: DataAccess
         environment:
             ENVIRONMENT: Production
-            LOG_PATH: ./Logs
+            LOG_PATH: /app/Logs/Production
         networks:
             - nat
         volumes:

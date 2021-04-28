@@ -19,7 +19,7 @@ namespace Ingestion
 
             var logFilePath = Environment.GetEnvironmentVariable("LOG_PATH");
             using var logger = new LoggerConfiguration()
-                .WriteTo.Console(LogEventLevel.Warning)
+                .WriteTo.Console(LogEventLevel.Information)
                 .WriteTo.File($"{logFilePath}/Ingestion.txt", LogEventLevel.Verbose, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
@@ -89,6 +89,10 @@ namespace Ingestion
                     "KRYPTO",
                     "FOLDIN",
                     "SPACE",
+                    "INQ",
+                    "CAVERA",
+                    "SENTRY",
+                    "PRO",
                 });
 
                 var trackedPlayerNames = new[]
@@ -130,6 +134,10 @@ namespace Ingestion
                     "IHasZero",
                     "Colonial",
                     "xRIOTx",
+                    "Revelide",
+                    "Bbc",
+                    "TheSniperDuo",
+                    "Denooo",
                 };
 
                 await playerService.FetchTrackedPlayerStats(trackedPlayerNames);
