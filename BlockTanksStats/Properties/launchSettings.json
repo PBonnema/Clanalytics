@@ -3,7 +3,8 @@
     "BlockTanksStats": {
       "commandName": "Project",
       "environmentVariables": {
-        "ENVIRONMENT": "Development"
+        "ENVIRONMENT": "Development",
+        "PERIOD_LENGHT_DAYS": "14"
       }
     }
   }

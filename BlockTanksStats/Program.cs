@@ -52,7 +52,7 @@ namespace BlockTanksStats
             var _clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
             var csvSep = ';';
             var days = 1;
-            var periodLengthDays = 14;
+            var periodLengthDays = int.Parse(Environment.GetEnvironmentVariable("PERIOD_LENGHT_DAYS"));
 
             if (Directory.Exists(statsPath))
             {
@@ -63,11 +63,15 @@ namespace BlockTanksStats
                 }
             }
 
+            var clans = await _clanRepository.GetAsync();
+            await SaveClanLeaderboardAsync(clans, days, periodLengthDays, culture, statsPath, csvSep, now);
+
             var players = await _playerRepository.GetAsync();
 
             foreach(var clanTag in new[] {
                 "RIOT",
                 "RIOT2",
+                "RIOT3",
                 "ZR",
                 "DRONE",
                 "MERC",
@@ -78,14 +82,12 @@ namespace BlockTanksStats
                 "CAVERA",
                 "SENTRY",
                 "PRO",
+                "TD",
                 "Tracked Player",
             })
             {
                 await SaveClanDashboardsAsync(clanTag, players, days, periodLengthDays, culture, statsPath, clanDashboardsPath, csvSep, now);
             }
-
-            var clans = await _clanRepository.GetAsync();
-            await SaveClanLeaderboardAsync(clans, days, periodLengthDays, culture, statsPath, csvSep, now);
 
             await SavePlayerStatsAsync(players, culture, statsPath, csvSep);
 

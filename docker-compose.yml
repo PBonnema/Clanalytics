@@ -33,7 +33,7 @@ services:
             - nat-test
         volumes:
             - stats-test:/data/db
-        
+
     mongo-transfer:
         profiles:
             - transfer-db-test
@@ -46,7 +46,7 @@ services:
             - nat-test
             - nat
         command: sh -c 'mongodump -d BlockTanksStats --uri="mongodb://root:example@mongo:27017" --archive --authenticationDatabase admin | mongorestore --drop --uri="mongodb://root:example@mongo-test:27017" --archive'
-        
+
     mongo:
         profiles:
             - transfer-db-test
@@ -97,7 +97,7 @@ services:
             ME_CONFIG_MONGODB_ADMINPASSWORD: example
         networks:
             - nat
-            
+
     selenium-chrome:
         profiles:
             - ingestion
@@ -170,6 +170,7 @@ services:
                 DataAccessDir: DataAccess
         environment:
             ENVIRONMENT: Test
+            PERIOD_LENGHT_DAYS: 14
         networks:
             - nat-test
         volumes:
@@ -188,6 +189,7 @@ services:
                 DataAccessDir: DataAccess
         environment:
             ENVIRONMENT: Production
+            PERIOD_LENGHT_DAYS: 14
         networks:
             - nat
         volumes:
