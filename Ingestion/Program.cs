@@ -19,8 +19,9 @@ namespace Ingestion
 
             var logFilePath = Environment.GetEnvironmentVariable("LOG_PATH");
             using var logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.File($"{logFilePath}/Ingestion.txt", LogEventLevel.Debug, rollingInterval: RollingInterval.Day)
                 .WriteTo.Console(LogEventLevel.Information)
-                .WriteTo.File($"{logFilePath}/Ingestion.txt", LogEventLevel.Verbose, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             logger.Information($"Initalizing at {now}...");
@@ -83,6 +84,7 @@ namespace Ingestion
                 await playerService.FetchClanMemberStats(new[] {
                     "RIOT",
                     "RIOT2",
+                    "RIOT3",
                     "ZR",
                     "DRONE",
                     "MERC",
@@ -93,6 +95,7 @@ namespace Ingestion
                     "CAVERA",
                     "SENTRY",
                     "PRO",
+                    "TD",
                 });
 
                 var trackedPlayerNames = new[]
@@ -138,6 +141,35 @@ namespace Ingestion
                     "Bbc",
                     "TheSniperDuo",
                     "Denooo",
+                    "Arjun pro ff 2",
+                    "V God",
+                    "ARISTHEOREO",
+                    "xB-RADx_ALT",
+                    "Milliana",
+                    "Coronaries VN",
+                    "Dream -SMP",
+                    "ichi",
+                    "Atom",
+                    "-Pumpkin-",
+                    "Kíra",
+                    "Onii-Chan",
+                    "Garga",
+                    "Retro",
+                    "nOtelite",
+                    "slg jujudark",
+                    "THE DARK TANK",
+                    "le7",
+                    "Zynox81",
+                    "lopik",
+                    "Yanshuo",
+                    "BlueLeaf",
+                    "Block Slayer",
+                    "Harpro",
+                    "bow and arrow",
+                    "Eazy clap",
+                    "Geyyyy",
+                    "PoopyDoopy",
+                    "Pepe Da Frog",
                 };
 
                 await playerService.FetchTrackedPlayerStats(trackedPlayerNames);

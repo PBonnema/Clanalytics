@@ -30,12 +30,14 @@ namespace Ingestion.Services
             if (storedPlayer == null)
             {
                 await _playerRepository.CreateAsync(player, cancellation);
+                _logger.Debug($"Added stats for new player {player.DisplayName}");
             }
             else
             {
                 player.LeaderboardCompHistory = storedPlayer.LeaderboardCompHistory.Concat(player.LeaderboardCompHistory);
                 player.Id = storedPlayer.Id;
                 await _playerRepository.UpdateByPlayerIdAsync(storedPlayer.PlayerId, player, cancellation);
+                _logger.Debug($"Updated stats for player {player.DisplayName}");
             }
         }
 
@@ -68,7 +70,6 @@ namespace Ingestion.Services
                     var player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
                     player.ClanTag = clanTag;
                     await AddStatsForPlayerAsync(player, cancellation);
-                    _logger.Debug($"Saved stats for player {playerName}");
                 }
                 else
                 {
