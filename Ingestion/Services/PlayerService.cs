@@ -1,7 +1,9 @@
 ﻿using DataAccess.Models;
 using DataAccess.Repository;
 using Ingestion.Agents;
+using Ingestion.Models;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -15,13 +17,20 @@ namespace Ingestion.Services
         private readonly IBlockTanksAPIAgent _blockTanksPlayerAPIAgent;
         private readonly IScrapeBTPageService _scrapeBTPageService;
         private readonly ILogger _logger;
+        private readonly OwnedClans _ownedClans;
 
-        public PlayerService(IPlayerRepository playerRepository, IBlockTanksAPIAgent blockTanksPlayerAPIAgent, IScrapeBTPageService scrapeBTPageService, ILogger logger)
+        public PlayerService(
+            IPlayerRepository playerRepository,
+            IBlockTanksAPIAgent blockTanksPlayerAPIAgent,
+            IScrapeBTPageService scrapeBTPageService,
+            ILogger logger,
+            OwnedClans ownedClans)
         {
             _playerRepository = playerRepository;
             _blockTanksPlayerAPIAgent = blockTanksPlayerAPIAgent;
             _scrapeBTPageService = scrapeBTPageService;
             _logger = logger;
+            _ownedClans = ownedClans;
         }
 
         public async Task AddStatsForPlayerAsync(Player player, CancellationToken cancellation = default)
@@ -63,19 +72,41 @@ namespace Ingestion.Services
             playerNames = await _playerRepository.FilterPlayersNotInClanAsync(playerNames, cancellation);
 
             _logger.Information($"Fetching stats of {playerNames.Count()} players...");
+            
+            var tasks = new List<Task>();
             foreach (var playerName in playerNames)
             {
-                if (!await _scrapeBTPageService.ArePlayerStatsHiddenAsync(playerName, cancellation))
+                async Task action()
                 {
-                    var player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
-                    player.ClanTag = clanTag;
-                    await AddStatsForPlayerAsync(player, cancellation);
+                    var amIClanMemberOfPlayer = AmIClanMemberOfPlayer(clanTag);
+                    if (amIClanMemberOfPlayer || !await _scrapeBTPageService.ArePlayerStatsHiddenAsync(playerName, cancellation))
+                    {
+                        Player player;
+                        if (amIClanMemberOfPlayer)
+                        {
+                            var (asPlayer, authHash) = _ownedClans.OwnedClanCredentials[clanTag];
+                            player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, asPlayer, authHash, cancellation);
+                        }
+                        else
+                        {
+                            player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
+                        }
+                        player.ClanTag = clanTag;
+                        await AddStatsForPlayerAsync(player, cancellation);
+                    }
+                    else
+                    {
+                        _logger.Warning($"{playerName} has their stats hidden or isn't found.");
+                    }
                 }
-                else
-                {
-                    _logger.Warning($"{playerName} has their stats hidden or isn't found.");
-                }
+                tasks.Add(action());
             }
+            await Task.WhenAll(tasks);
+        }
+
+        private bool AmIClanMemberOfPlayer(string clanTag)
+        {
+            return _ownedClans.OwnedClanCredentials.Keys.Contains(clanTag);
         }
     }
 }

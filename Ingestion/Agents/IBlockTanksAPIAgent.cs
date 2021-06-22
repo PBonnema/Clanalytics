@@ -10,5 +10,6 @@ namespace Ingestion.Agents
     {
         Task<IEnumerable<Clan>> FetchClanLeaderboard(CancellationToken cancellation = default);
         Task<Player> FetchPlayerAsync(string playerName, CancellationToken cancellation = default);
+        Task<Player> FetchPlayerAsync(string playerName, string asPlayer, string authHash, CancellationToken cancellation = default);
     }
 }
