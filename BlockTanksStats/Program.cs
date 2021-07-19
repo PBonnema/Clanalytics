@@ -48,8 +48,8 @@ namespace BlockTanksStats
                 PlayersCollectionName: "Players",
                 ClansCollectionName: "Clans"
             );
-            var _playerRepository = new PlayerRepository(blockTanksStatsDatabaseSettings, now);
-            var _clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
+            var playerRepository = new PlayerRepository(blockTanksStatsDatabaseSettings, now);
+            var clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
             var csvSep = ';';
             var days = 1;
             var periodLengthDays = int.Parse(Environment.GetEnvironmentVariable("PERIOD_LENGHT_DAYS"));
@@ -63,10 +63,10 @@ namespace BlockTanksStats
                 }
             }
 
-            var clans = await _clanRepository.GetAsync();
+            var clans = await clanRepository.GetAsync();
             await SaveClanLeaderboardAsync(clans, days, periodLengthDays, culture, statsPath, csvSep, now);
 
-            var players = await _playerRepository.GetAsync();
+            var players = await playerRepository.GetAsync();
 
             foreach(var clanTag in new[] {
                 "RIOT",
@@ -79,10 +79,13 @@ namespace BlockTanksStats
                 "FOLDIN",
                 "SPACE",
                 "INQ",
-                "CAVERA",
                 "SENTRY",
                 "PRO",
                 "TD",
+                "SPEEDY",
+                "E8",
+                "TS12",
+                "RIES",
                 "Tracked Player",
             })
             {
@@ -130,7 +133,7 @@ namespace BlockTanksStats
                 var first = p.LeaderboardCompHistory.FirstOrDefault(l => l.Timestamp.Date >= firstDate);
                 if (first != null)
                 {
-                    var last = p.LeaderboardCompHistory.LastOrDefault();
+                    var last = p.LeaderboardCompHistory.Reverse().Skip(1).FirstOrDefault();
                     return last.Xp - first.Xp;
                 }
                 else
