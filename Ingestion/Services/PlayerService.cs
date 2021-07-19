@@ -1,6 +1,7 @@
 ﻿using DataAccess.Models;
 using DataAccess.Repository;
 using Ingestion.Agents;
+using Ingestion.Exceptions;
 using Ingestion.Models;
 using Serilog;
 using System;
@@ -72,16 +73,16 @@ namespace Ingestion.Services
             playerNames = await _playerRepository.FilterPlayersNotInClanAsync(playerNames, cancellation);
 
             _logger.Information($"Fetching stats of {playerNames.Count()} players...");
-            
+
             var tasks = new List<Task>();
             foreach (var playerName in playerNames)
             {
                 async Task action()
                 {
                     var amIClanMemberOfPlayer = AmIClanMemberOfPlayer(clanTag);
-                    if (amIClanMemberOfPlayer || !await _scrapeBTPageService.ArePlayerStatsHiddenAsync(playerName, cancellation))
+                    try
                     {
-                        Player player;
+                        Player player = null;
                         if (amIClanMemberOfPlayer)
                         {
                             var (asPlayer, authHash) = _ownedClans.OwnedClanCredentials[clanTag];
@@ -91,12 +92,20 @@ namespace Ingestion.Services
                         {
                             player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
                         }
-                        player.ClanTag = clanTag;
-                        await AddStatsForPlayerAsync(player, cancellation);
+
+                        if (player != null)
+                        {
+                            player.ClanTag = clanTag;
+                            await AddStatsForPlayerAsync(player, cancellation);
+                        }
+                        else
+                        {
+                            _logger.Warning($"{playerName} has their stats hidden.");
+                        }
                     }
-                    else
+                    catch (UserNotFoundException e)
                     {
-                        _logger.Warning($"{playerName} has their stats hidden or isn't found.");
+                        _logger.Error($"{playerName} isn't found: {e}");
                     }
                 }
                 tasks.Add(action());

@@ -19,6 +19,7 @@ namespace Ingestion
         static async Task Main()
         {
             var now = DateTime.UtcNow;
+            var useRemoteSeleniumForDev = true;
 
             var logFilePath = Environment.GetEnvironmentVariable("LOG_PATH");
             try
@@ -65,24 +66,24 @@ namespace Ingestion
                     var clanService = new ClanService(clanRepository, logger.ForContext<ClanService>());
 
                     var ioExceptionPolicy = Policy.Handle<IOException>()
-                      .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(r * 10));
+                      .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(r * r * 0.5));
                     var httpRequestExceptionPolicy = Policy.Handle<HttpRequestException>()
-                      .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(r * 10));
+                      .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(r * r * 0.5));
                     var taskCanceledExceptionPolicy = Policy.Handle<TaskCanceledException>()
-                      .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(r * 10));
+                      .WaitAndRetryAsync(10, r => TimeSpan.FromSeconds(r * r * 0.5));
                     var pollyPolicy = ioExceptionPolicy.WrapAsync(httpRequestExceptionPolicy);
                     pollyPolicy = pollyPolicy.WrapAsync(taskCanceledExceptionPolicy);
 
                     using var blockTanksPlayerAPIAgent = new BlockTanksAPIAgent("https://blocktanks.io", pollyPolicy, logger.ForContext<BlockTanksAPIAgent>());
                     using var scrapeBTPageService = new ScrapeBTPageService(new ScrapeBTPageService.SeleniumConfig(
-                        UseRemoteSeleniumChrome: Environment.GetEnvironmentVariable("ENVIRONMENT") != "Development",
+                        UseRemoteSeleniumChrome: useRemoteSeleniumForDev || Environment.GetEnvironmentVariable("ENVIRONMENT") != "Development",
                         SeleniumChromeUrl: seleniumChromeUrl,
                         SeleniumConnectionRetries: 5,
                         SeleniumConnectionRetryPeriodSec: 2
                     ), "https://blocktanks.io");
 
                     var ownedClans = new OwnedClans { OwnedClanCredentials = new Dictionary<string, (string, string)> {
-                        { "RIOT", ( "Jupiter", "$2a$08$VMc9J5EvpnHFlVgXm5oaDuA.a4MUZ49Bf49p6P8iFi4GE/YmRjQ5K") },
+                        //{ "RIOT", ( "Jupiter", "$2a$08$VMc9J5EvpnHFlVgXm5oaDuA.a4MUZ49Bf49p6P8iFi4GE/YmRjQ5K") },
                         { "RIOT2", ( "xRIOTx", "$2a$08$mjkrpe4CgwCwl8Lq5pup1epImuCfHmS8RK4DPb8LkgCnR9jPBDJ7e") },
                         { "RIOT3", ( "Jupiter alt", "$2a$08$63S3JMJzOawaOPuyWmu3aepHsZjymDNunjbFzCNmdI/feFKHkS1D6") },
                     } };
@@ -134,7 +135,6 @@ namespace Ingestion
                         "cube",
                         "mg123ok",
                         "magic_exe",
-                        "yrene",
                         "temp",
                         "Luinlanthir",
                         "Tank tsunami666",
@@ -177,7 +177,7 @@ namespace Ingestion
                         "le7",
                         "Zynox81",
                         "lopik",
-                        "Yanshuo",
+                        "Yangshuo",
                         "BlueLeaf",
                         "Block Slayer",
                         "Harpro",
@@ -202,37 +202,45 @@ namespace Ingestion
                         "Hanna",
                         "CampKing",
                         "Strike",
-					    "Power X",
-					    "ChAs81",
-					    "Keep Killing It",
-					    "Dev1ce",
-					    "Jhalmarpro",
-					    "drdynamic333",
-					    "Every1",
-					    "Zero 2",
-					    "Fleur",
+                        "Power X",
+                        "ChAs81",
+                        "Keep Killing It",
+                        "Dev1ce",
+                        "Jhalmarpro",
+                        "drdynamic333",
+                        "Every1",
+                        "Zero 2",
+                        "Fleur",
                         "Live Life",
-					    "Foreverkitty",
+                        "Foreverkitty",
                         "Zeeto",
                         "xDNevioxD",
-						"Mucahit",
-						"Benjamin1124",
-						"MATHIASCRACK",
-						"Mister D",
-						"Io pro",
-						"Doctor Surviv",
-						"Catkid",
-						"TwinX22",
-						"Jingles",
-						"TKSS1216",
-						"Surfer",
-						"Khu1",
-						"EPiccc",
-						"Jayden_funeez",
-						"lionclaw",
+                        "Mucahit",
+                        "Benjamin1124",
+                        "MATHIASCRACK",
+                        "Mister D",
+                        "Io pro",
+                        "Doctor Surviv",
+                        "Catkid",
+                        "TwinX22",
+                        "Jingles",
+                        "TKSS1216",
+                        "Surfer",
+                        "Khu1",
+                        "EPiccc",
+                        "Jayden_funeez",
+                        "lionclaw",
+                        "oof boi",
+						"Izzz",
+						"Jason12345",
                     };
 
-                    await playerService.FetchTrackedPlayerStats(trackedPlayerNames);
+                    var groupSize = 20;
+                    for(var i = 0; i < trackedPlayerNames.Length; i+= groupSize)
+                    {
+                        var endIndex = Math.Min(trackedPlayerNames.Length - 1, i + groupSize);
+                        await playerService.FetchTrackedPlayerStats(trackedPlayerNames[i..endIndex]);
+                    }
 
                     sw.Stop();
                     logger.Information($"...Done fetching in {sw.Elapsed}. Exiting.");

@@ -117,12 +117,114 @@ services:
             - nat
             - nat-test
 
+    #selenium-hub:
+    #    profiles:
+    #        - ingestion
+    #        - ingestion-test
+    #        - ingestion-dev
+    #    image: selenium/hub:4
+    #    restart: always
+    #    container_name: selenium-hub
+    #    ports:
+    #      - "4442:4442"
+    #      - "4443:4443"
+    #      - "4444:4444"
+    #    networks:
+    #        - nat
+    #        - nat-test
+    #        - selenium-grid
+
+    #selenium-chrome-node1:
+    #    profiles:
+    #        - ingestion
+    #        - ingestion-test
+    #        - ingestion-dev
+    #    image: selenium/node-chrome:91.0.4472.114
+    #    restart: always
+    #    depends_on:
+    #        - selenium-hub
+    #    environment:
+    #        - START_XVFB=false # If this is true, it starts a server in the container that is only necessary when you don't run chrome in headless mode
+    #        - SE_EVENT_BUS_HOST=selenium-hub
+    #        - SE_EVENT_BUS_PUBLISH_PORT=4442
+    #        - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    #    volumes:
+    #        - /dev/shm:/dev/shm # This is recommended by the readme of the image. https://github.com/SeleniumHQ/docker-selenium
+    #    ports:
+    #        - "6900:5900"
+    #    networks:
+    #        - selenium-grid
+
+    #selenium-chrome-node2:
+    #    profiles:
+    #        - ingestion
+    #        - ingestion-test
+    #        - ingestion-dev
+    #    image: selenium/node-chrome:91.0.4472.114
+    #    restart: always
+    #    depends_on:
+    #        - selenium-hub
+    #    environment:
+    #        - START_XVFB=false # If this is true, it starts a server in the container that is only necessary when you don't run chrome in headless mode
+    #        - SE_EVENT_BUS_HOST=selenium-hub
+    #        - SE_EVENT_BUS_PUBLISH_PORT=4442
+    #        - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    #    volumes:
+    #        - /dev/shm:/dev/shm # This is recommended by the readme of the image. https://github.com/SeleniumHQ/docker-selenium
+    #    ports:
+    #        - "6901:5900"
+    #    networks:
+    #        - selenium-grid
+
+    #selenium-chrome-node3:
+    #    profiles:
+    #        - ingestion
+    #        - ingestion-test
+    #        - ingestion-dev
+    #    image: selenium/node-chrome:91.0.4472.114
+    #    restart: always
+    #    depends_on:
+    #        - selenium-hub
+    #    environment:
+    #        - START_XVFB=false # If this is true, it starts a server in the container that is only necessary when you don't run chrome in headless mode
+    #        - SE_EVENT_BUS_HOST=selenium-hub
+    #        - SE_EVENT_BUS_PUBLISH_PORT=4442
+    #        - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    #    volumes:
+    #        - /dev/shm:/dev/shm # This is recommended by the readme of the image. https://github.com/SeleniumHQ/docker-selenium
+    #    ports:
+    #        - "6902:5900"
+    #    networks:
+    #        - selenium-grid
+
+    #selenium-chrome-node4:
+    #    profiles:
+    #        - ingestion
+    #        - ingestion-test
+    #        - ingestion-dev
+    #    image: selenium/node-chrome:91.0.4472.114
+    #    restart: always
+    #    depends_on:
+    #        - selenium-hub
+    #    environment:
+    #        - START_XVFB=false # If this is true, it starts a server in the container that is only necessary when you don't run chrome in headless mode
+    #        - SE_EVENT_BUS_HOST=selenium-hub
+    #        - SE_EVENT_BUS_PUBLISH_PORT=4442
+    #        - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    #    volumes:
+    #        - /dev/shm:/dev/shm # This is recommended by the readme of the image. https://github.com/SeleniumHQ/docker-selenium
+    #    ports:
+    #        - "6903:5900"
+    #    networks:
+    #        - selenium-grid
+
     ingestion-test:
         profiles:
             - ingestion-test
         depends_on:
             - mongo-test
             - selenium-chrome
+            #- selenium-hub
         build:
             context: ./
             dockerfile: Ingestion/Dockerfile
@@ -143,6 +245,7 @@ services:
         depends_on:
             - mongo
             - selenium-chrome
+            #- selenium-hub
         build:
             context: ./
             dockerfile: Ingestion/Dockerfile
@@ -200,6 +303,8 @@ networks:
         name: nat
     nat-test:
         name: nat-test
+    #selenium-grid:
+    #    name: selenium-grid
 
 volumes:
     stats:
