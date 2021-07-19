@@ -81,7 +81,6 @@ namespace BlockTanksStats
                 "INQ",
                 "SENTRY",
                 "PRO",
-                "TD",
                 "SPEEDY",
                 "E8",
                 "TS12",
@@ -134,12 +133,13 @@ namespace BlockTanksStats
                 if (first != null)
                 {
                     var last = p.LeaderboardCompHistory.Reverse().Skip(1).FirstOrDefault();
-                    return last.Xp - first.Xp;
-                }
-                else
-                {
+                    if (last != null)
+                    {
+                        return last.Xp - first.Xp;
+                    }
                     return 0.0;
                 }
+                return 0.0;
             }).ToList();
 
             var builder = new StringBuilder();

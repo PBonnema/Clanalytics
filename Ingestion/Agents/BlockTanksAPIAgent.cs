@@ -87,7 +87,7 @@ namespace Ingestion.Agents
             return await FetchPlayerAsync(playerName, cancellation);
         }
 
-        public async Task<IEnumerable<Clan>> FetchClanLeaderboard(CancellationToken cancellation = default)
+        public async Task<IEnumerable<Clan>> FetchClanLeaderBoard(CancellationToken cancellation = default)
         {
             _logger.Verbose($"GET {_httpClient.BaseAddress}{CLAN_DATA_ENDPOINT} cookies: {_cookieContainer.GetCookieHeader(new Uri(_httpClient.BaseAddress.ToString()))}");
 

@@ -56,8 +56,14 @@ namespace Ingestion.Services
             foreach (var clanTag in clanTags)
             {
                 _logger.Information($"Fetching {clanTag} members...");
-                var playerNames = await _scrapeBTPageService.GetClanMembersAsync(clanTag, cancellation);
-                await FetchPlayersStats(playerNames, clanTag, cancellation);
+                var (playerNames, clanExists) = await _scrapeBTPageService.GetClanMembersAsync(clanTag, cancellation);
+                if (clanExists)
+                {
+                    await FetchPlayersStats(playerNames, clanTag, cancellation);
+                } else
+                {
+                    _logger.Warning($"Clan {clanTag} doesn't exist.");
+                }
             }
         }
 

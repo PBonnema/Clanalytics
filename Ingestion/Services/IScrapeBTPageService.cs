@@ -7,7 +7,6 @@ namespace Ingestion.Services
 {
     public interface IScrapeBTPageService : IDisposable
     {
-        Task<bool> ArePlayerStatsHiddenAsync(string playerName, CancellationToken cancellation = default);
-        Task<IList<string>> GetClanMembersAsync(string clanTag, CancellationToken cancellation = default);
+        Task<(IList<string>, bool)> GetClanMembersAsync(string clanTag, CancellationToken cancellation = default);
     }
 }

@@ -64,10 +64,15 @@ namespace Ingestion.Services
             _baseUrl = baseUrl;
         }
 
-        public async Task<IList<string>> GetClanMembersAsync(string clanTag, CancellationToken cancellation = default)
+        public async Task<(IList<string>, bool)> GetClanMembersAsync(string clanTag, CancellationToken cancellation = default)
         {
-            var memberListItems = (await App.ViewClanPageAsync(clanTag, _webDriver, _baseUrl, cancellation)).MemberListItems();
-            return memberListItems.Select(m => m.Name()).ToList();
+            var clanPage = await App.ViewClanPageAsync(clanTag, _webDriver, _baseUrl, cancellation);
+            if (clanPage.Exists())
+            {
+                var memberListItems = clanPage.MemberListItems();
+                return (memberListItems.Select(m => m.Name()).ToList(), true);
+            }
+            return (Enumerable.Empty<string>().ToList(), false);
         }
 
         public async Task<bool> ArePlayerStatsHiddenAsync(string playerName, CancellationToken cancellation = default)

@@ -19,7 +19,7 @@ namespace Ingestion
         static async Task Main()
         {
             var now = DateTime.UtcNow;
-            var useRemoteSeleniumForDev = true;
+            var useRemoteSeleniumForDev = false;
 
             var logFilePath = Environment.GetEnvironmentVariable("LOG_PATH");
             try
@@ -106,7 +106,6 @@ namespace Ingestion
                         "INQ",
                         "SENTRY",
                         "PRO",
-                        "TD",
                         "SPEEDY",
                         "E8",
                         "TS12",
@@ -261,7 +260,7 @@ namespace Ingestion
         private static async Task FetchClanLeaderboardStats(ClanService clanService, BlockTanksAPIAgent blockTanksPlayerAPIAgent, ILogger logger)
         {
             logger.Information($"Fetching clan leaderboard...");
-            var clans = await blockTanksPlayerAPIAgent.FetchClanLeaderboard();
+            var clans = await blockTanksPlayerAPIAgent.FetchClanLeaderBoard();
             foreach (var clan in clans)
             {
                 await clanService.AddStatsForClanAsync(clan);
