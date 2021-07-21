@@ -108,6 +108,11 @@ namespace BlockTanksStats
             char csvSep,
             DateTime now)
         {
+            if (players.Count(p => p.ClanTag == clanTag) == 0)
+            {
+                Console.WriteLine($"WARNING: clan {clanTag} doesn't have any players. Is the tag correct?");
+            }
+
             await SaveKDRPerDaysDashboardAsync(clanTag, players, days, periodLengthDays, culture, statsPath, clanDashboardsPath, csvSep, now);
             await SaveXpPerDaysDashboardAsync(clanTag, players, days, periodLengthDays, culture, statsPath, clanDashboardsPath, csvSep, now);
             await SaveXpDashboardAsync(clanTag, players, culture, statsPath, clanDashboardsPath, csvSep, now);
