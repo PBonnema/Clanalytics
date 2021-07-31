@@ -1,5 +1,6 @@
 ﻿using DataAccess.Models;
 using DataAccess.Repository;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace BlockTanksStats.ViewModels
     public class ClanDashboardViewModel : ViewModel
     {
         private readonly string _clanTag;
+        private readonly ILogger _logger;
 
         public IEnumerable<Player> Players { get; private set; }
         public IEnumerable<Player> PlayersXP { get => Players; }
@@ -22,10 +24,12 @@ namespace BlockTanksStats.ViewModels
             IClanRepository clanRepository,
             IPlayerRepository playerRepository,
             string clanTag,
-            string templateFile)
+            string templateFile,
+            ILogger logger)
                 : base(clanRepository, playerRepository, templateFile)
         {
             _clanTag = clanTag;
+            _logger = logger;
         }
 
         private void AddXP(
@@ -221,11 +225,12 @@ namespace BlockTanksStats.ViewModels
             int periodLengthDays,
             CancellationToken cancellation)
         {
+            _logger.Debug("Fetching players from the database...");
             var players = await PlayerRepository.GetByClanAsync(_clanTag, cancellation);
 
             if (!players.Any())
             {
-                Console.WriteLine($"WARNING: clan {_clanTag} doesn't have any players. Is the tag correct?");
+                _logger.Warning($"clan {_clanTag} doesn't have any players. Is the tag correct?");
             }
 
             Players = players

@@ -1,5 +1,6 @@
 ﻿using BlockTanksStats.ViewModels;
 using ClosedXML.Report;
+using Serilog;
 using System;
 using System.IO;
 using System.Threading;
@@ -15,15 +16,16 @@ namespace BlockTanksStats
             DateTime now,
             int days,
             int periodLengthDays,
+            ILogger logger,
             CancellationToken cancellation = default)
         {
-            Console.WriteLine($"Saving dashboard {Path.GetFileNameWithoutExtension(dashboardFile)}...");
+            logger.Information($"Saving dashboard {Path.GetFileNameWithoutExtension(dashboardFile)}...");
             await viewModel.OnGenerateAsync(now, days, periodLengthDays, cancellation);
             using var template = new XLTemplate(viewModel.TemplateFile);
             template.AddVariable(viewModel);
             template.Generate();
             template.SaveAs(dashboardFile);
-            Console.WriteLine($"Saved dashboard {Path.GetFileNameWithoutExtension(dashboardFile)}...");
+            logger.Information($"Saved dashboard {Path.GetFileNameWithoutExtension(dashboardFile)}...");
         }
     }
 }

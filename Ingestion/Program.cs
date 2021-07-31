@@ -110,6 +110,7 @@ namespace Ingestion
                         "E8",
                         "TS12",
                         "RIES",
+						"DID",
                     });
 
                     await FetchClanLeaderboardStats(clanService, blockTanksPlayerAPIAgent, logger);

@@ -274,10 +274,12 @@ services:
         environment:
             ENVIRONMENT: Test
             PERIOD_LENGHT_DAYS: 14
+            LOG_PATH: /app/Logs/Test
         networks:
             - nat-test
         volumes:
             - ./Dashboards-test:/app/Dashboards
+            - ./Logs:/app/Logs
 
     blocktanksstats:
         profiles:
@@ -293,10 +295,12 @@ services:
         environment:
             ENVIRONMENT: Production
             PERIOD_LENGHT_DAYS: 14
+            LOG_PATH: /app/Logs/Production
         networks:
             - nat
         volumes:
             - ./Dashboards:/app/Dashboards
+            - ./Logs:/app/Logs
 
 networks:
     nat:

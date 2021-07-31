@@ -3,8 +3,9 @@
     "BlockTanksStats": {
       "commandName": "Project",
       "environmentVariables": {
-        "ENVIRONMENT": "Development",
-        "PERIOD_LENGHT_DAYS": "14"
+        "PERIOD_LENGHT_DAYS": "14",
+        "LOG_PATH": "C:/Users/peterB/repositories/hobby projecten/BlockTanksStats/Logs/Development",
+        "ENVIRONMENT": "Development"
       }
     }
   }

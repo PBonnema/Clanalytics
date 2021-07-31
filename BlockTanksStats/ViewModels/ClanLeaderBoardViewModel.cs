@@ -1,5 +1,6 @@
 ﻿using DataAccess.Models;
 using DataAccess.Repository;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace BlockTanksStats.ViewModels
     public class ClanLeaderBoardViewModel : ViewModel
     {
         private readonly string _relativeToClanTag;
+        private readonly ILogger _logger;
 
         public IEnumerable<Clan> Clans { get; set; }
         public IEnumerable<DateTime> Dates { get; set; } = Enumerable.Empty<DateTime>();
@@ -19,10 +21,12 @@ namespace BlockTanksStats.ViewModels
             IClanRepository clanRepository,
             IPlayerRepository playerRepository,
             string relativeToClanTag,
-            string templateFile)
+            string templateFile,
+            ILogger logger)
                 : base(clanRepository, playerRepository, templateFile)
         {
             _relativeToClanTag = relativeToClanTag;
+            _logger = logger;
         }
 
         private static double? CalcDaysUntilCatchup(
@@ -130,6 +134,7 @@ namespace BlockTanksStats.ViewModels
             int periodLengthDays,
             CancellationToken cancellation)
         {
+            _logger.Debug("Fetching clans from the database...");
             var clans = await ClanRepository.GetAsync(cancellation);
             var relativeToClan = clans.Single(c => c.Tag == _relativeToClanTag);
             Clans = clans

@@ -8,6 +8,9 @@
 
   <ItemGroup>
     <PackageReference Include="ClosedXML.Report" Version="0.2.2" />
+    <PackageReference Include="Remora.Discord" Version="3.0.43" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
