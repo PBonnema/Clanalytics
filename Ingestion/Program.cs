@@ -27,7 +27,7 @@ namespace Ingestion
                 using var logger = new LoggerConfiguration()
                     .MinimumLevel.Verbose()
                     .WriteTo.File($"{logFilePath}/Ingestion.txt", LogEventLevel.Debug, rollingInterval: RollingInterval.Day)
-                    .WriteTo.Console(LogEventLevel.Verbose)
+                    .WriteTo.Console(LogEventLevel.Debug)
                     .CreateLogger();
 
                 logger.Information($"Initalizing at {now}...");

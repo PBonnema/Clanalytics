@@ -21,6 +21,9 @@ namespace DataAccess.Repository
         public async Task<Player> GetByPlayerIdAsync(string playerId, CancellationToken cancellation = default) =>
             await (await _models.FindAsync(player => player.PlayerId == playerId, cancellationToken: cancellation)).FirstOrDefaultAsync(cancellation);
 
+        public async Task<IEnumerable<Player>> GetByClanAsync(string clanTag, CancellationToken cancellation = default) =>
+            await (await _models.FindAsync(p => p.ClanTag == clanTag, cancellationToken: cancellation)).ToListAsync(cancellation);
+
         public override async Task<Player> CreateAsync(Player player, CancellationToken cancellation = default)
         {
             foreach (var leaderboardCompHistory in player.LeaderboardCompHistory)

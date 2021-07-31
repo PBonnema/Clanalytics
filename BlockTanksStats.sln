@@ -22,23 +22,32 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Release.Signed|Any CPU = Release.Signed|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{07A113DC-AD3A-4659-B2AC-A2B49B919804}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{07A113DC-AD3A-4659-B2AC-A2B49B919804}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07A113DC-AD3A-4659-B2AC-A2B49B919804}.Release.Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{07A113DC-AD3A-4659-B2AC-A2B49B919804}.Release.Signed|Any CPU.Build.0 = Release|Any CPU
 		{07A113DC-AD3A-4659-B2AC-A2B49B919804}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07A113DC-AD3A-4659-B2AC-A2B49B919804}.Release|Any CPU.Build.0 = Release|Any CPU
 		{67A831CF-68EC-4A56-97D1-8C56FA1CCDA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{67A831CF-68EC-4A56-97D1-8C56FA1CCDA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67A831CF-68EC-4A56-97D1-8C56FA1CCDA9}.Release.Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{67A831CF-68EC-4A56-97D1-8C56FA1CCDA9}.Release.Signed|Any CPU.Build.0 = Release|Any CPU
 		{67A831CF-68EC-4A56-97D1-8C56FA1CCDA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{67A831CF-68EC-4A56-97D1-8C56FA1CCDA9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{942B9670-67C1-498D-B144-7F96DD94C03C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{942B9670-67C1-498D-B144-7F96DD94C03C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{942B9670-67C1-498D-B144-7F96DD94C03C}.Release.Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{942B9670-67C1-498D-B144-7F96DD94C03C}.Release.Signed|Any CPU.Build.0 = Release|Any CPU
 		{942B9670-67C1-498D-B144-7F96DD94C03C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{942B9670-67C1-498D-B144-7F96DD94C03C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}.Release.Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}.Release.Signed|Any CPU.Build.0 = Release|Any CPU
 		{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection

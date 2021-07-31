@@ -2,27 +2,40 @@
 FROM mcr.microsoft.com/dotnet/runtime:5.0-alpine AS base
 WORKDIR /app
 
+RUN apk add --no-cache \
 # Install cultures (same approach as Alpine SDK image)
-RUN apk add --no-cache icu-libs
+	icu-libs \
+# libgdiplus was taken from https://github.com/dotnet/core/issues/2746 and added the --repository according to https://docs.microsoft.com/en-us/dotnet/core/install/linux-alpine#dependencies
+# as a fix for 'System.DllNotFoundException: Unable to load DLL 'libgdiplus': The specified module could not be found.'
+# that ClosedXML.Report is throwing
+	libgdiplus \
+	--repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
+# ttf-dejavu was taken from https://github.com/AdoptOpenJDK/openjdk-docker/issues/529#issuecomment-811249458 to fix this exception: System.ArgumentException: Font '?' cannot be found.
+	ttf-dejavu
 
 # Disable the invariant mode (set in base image)
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 ###################
 FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine AS publish
-ARG BlockTanksStatsDir
-ARG DataAccessDir
 
-WORKDIR /src/DataAccess
+# First copy ONLY the csproj file and restore and then copy the rest of the files.
+# This has better caching behaviour.
+
+ARG DataAccessDir
+WORKDIR /src/DataAccess/
 COPY ${DataAccessDir}/*.csproj ./
 RUN dotnet restore "DataAccess.csproj"
 
-WORKDIR /src/BlockTanksStats
+ARG BlockTanksStatsDir
+WORKDIR /src/BlockTanksStats/
 COPY ${BlockTanksStatsDir}/*.csproj ./
 RUN dotnet restore "BlockTanksStats.csproj"
 
-COPY ${BlockTanksStatsDir}/ /src/BlockTanksStats/
+# Now copy the rest of the files and build
 COPY ${DataAccessDir}/ /src/DataAccess/
+COPY ${BlockTanksStatsDir}/ /src/BlockTanksStats/
+
 RUN dotnet publish --no-restore "BlockTanksStats.csproj" -c Release -o /app/publish
 
 ###################

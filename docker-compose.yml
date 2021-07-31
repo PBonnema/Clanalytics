@@ -277,7 +277,7 @@ services:
         networks:
             - nat-test
         volumes:
-            - ./SavedStats-test:/app/SavedStats
+            - ./Dashboards-test:/app/Dashboards
 
     blocktanksstats:
         profiles:
@@ -296,7 +296,7 @@ services:
         networks:
             - nat
         volumes:
-            - ./SavedStats:/app/SavedStats
+            - ./Dashboards:/app/Dashboards
 
 networks:
     nat:
