@@ -250,7 +250,7 @@ namespace Ingestion
             }
             catch (Exception e)
             {
-                File.AppendAllText($"{DateTimeOffset.UtcNow} {logFilePath}/Error.txt", e.ToString());
+                File.AppendAllText($"{DateTimeOffset.UtcNow} {logFilePath}/IngestionError.txt", e.ToString());
                 throw;
             }
         }
@@ -261,7 +261,14 @@ namespace Ingestion
             var clans = await blockTanksPlayerAPIAgent.FetchClanLeaderBoard();
             foreach (var clan in clans)
             {
-                await clanService.AddStatsForClanAsync(clan);
+                try
+                {
+                    await clanService.AddStatsForClanAsync(clan);
+                }
+                catch (Exception e)
+                {
+                    logger.Error($"Adding stats of clan {clan.Tag} for the clan leaderboard failed. Continuing...: ${e}");
+                }
             }
         }
     }

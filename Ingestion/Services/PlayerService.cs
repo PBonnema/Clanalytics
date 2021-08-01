@@ -60,7 +60,8 @@ namespace Ingestion.Services
                 if (clanExists)
                 {
                     await FetchPlayersStats(playerNames, clanTag, cancellation);
-                } else
+                }
+                else
                 {
                     _logger.Warning($"Clan {clanTag} doesn't exist.");
                 }
@@ -85,33 +86,40 @@ namespace Ingestion.Services
             {
                 async Task action()
                 {
-                    var amIClanMemberOfPlayer = AmIClanMemberOfPlayer(clanTag);
                     try
                     {
-                        Player player = null;
-                        if (amIClanMemberOfPlayer)
+                        var amIClanMemberOfPlayer = AmIClanMemberOfPlayer(clanTag);
+                        try
                         {
-                            var (asPlayer, authHash) = _ownedClans.OwnedClanCredentials[clanTag];
-                            player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, asPlayer, authHash, cancellation);
-                        }
-                        else
-                        {
-                            player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
-                        }
+                            Player player = null;
+                            if (amIClanMemberOfPlayer)
+                            {
+                                var (asPlayer, authHash) = _ownedClans.OwnedClanCredentials[clanTag];
+                                player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, asPlayer, authHash, cancellation);
+                            }
+                            else
+                            {
+                                player = await _blockTanksPlayerAPIAgent.FetchPlayerAsync(playerName, cancellation);
+                            }
 
-                        if (player != null)
-                        {
-                            player.ClanTag = clanTag;
-                            await AddStatsForPlayerAsync(player, cancellation);
+                            if (player != null)
+                            {
+                                player.ClanTag = clanTag;
+                                await AddStatsForPlayerAsync(player, cancellation);
+                            }
+                            else
+                            {
+                                _logger.Warning($"{playerName} has their stats hidden.");
+                            }
                         }
-                        else
+                        catch (UserNotFoundException e)
                         {
-                            _logger.Warning($"{playerName} has their stats hidden.");
+                            _logger.Error($"{playerName} isn't found: {e}");
                         }
                     }
-                    catch (UserNotFoundException e)
+                    catch (Exception e)
                     {
-                        _logger.Error($"{playerName} isn't found: {e}");
+                        _logger.Error($"Fetching stats for member of clan {clanTag} failed. Continuing...: ${e}");
                     }
                 }
                 tasks.Add(action());
