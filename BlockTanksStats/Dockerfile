@@ -1,8 +1,8 @@
-﻿# syntax=docker/dockerfile:1.2
+# syntax=docker/dockerfile:1.2
 FROM mcr.microsoft.com/dotnet/runtime:5.0-alpine AS base
 WORKDIR /app
 
-RUN apk add --no-cache \
+RUN apk update && apk add --no-cache \
 # Install cultures (same approach as Alpine SDK image)
 	icu-libs \
 # libgdiplus was taken from https://github.com/dotnet/core/issues/2746 and added the --repository according to https://docs.microsoft.com/en-us/dotnet/core/install/linux-alpine#dependencies
@@ -11,7 +11,10 @@ RUN apk add --no-cache \
 	libgdiplus \
 	--repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
 # ttf-dejavu was taken from https://github.com/AdoptOpenJDK/openjdk-docker/issues/529#issuecomment-811249458 to fix this exception: System.ArgumentException: Font '?' cannot be found.
-	ttf-dejavu
+	ttf-dejavu \
+# Taken from https://stackoverflow.com/a/55002182 and adapted with https://github.com/docker-library/php/issues/225
+	freetype-dev fontconfig fontconfig-dev libjpeg-turbo-dev libpng-dev
+	#libfontconfig1
 
 # Disable the invariant mode (set in base image)
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
