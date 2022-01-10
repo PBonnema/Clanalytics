@@ -1,0 +1,1 @@
+docker-compose --profile ingestion --profile dashboard build --pull --progress plain

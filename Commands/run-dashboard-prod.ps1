@@ -1,0 +1,1 @@
+docker-compose --profile dashboard up --exit-code-from blocktanksstats
