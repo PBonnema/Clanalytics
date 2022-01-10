@@ -74,18 +74,20 @@ namespace BlockTanksStats.ViewModels
             --periodLengthDays; // We are going to ignore today so the number of days considered is actually 1 less
             var firstDate = now.Date.AddDays(-periodLengthDays);
 
-            var statsEnumerators = new Dictionary<IEnumerator<ClanLeaderboardComp>, (bool, (double, Clan))>(clans.Zip(clanViewModels).Select(
-                x =>
-                {
-                    var enumerator = x.First.LeaderboardCompHistory.GetEnumerator();
-                    var done = false;
-
-                    do
+            var statsEnumerators = new Dictionary<IEnumerator<ClanLeaderboardComp>, (bool, (double, Clan))>(
+                clans.Zip(clanViewModels).Select(
+                    x =>
                     {
-                        done = !enumerator.MoveNext();
-                    } while (!done && enumerator.Current.Timestamp.Date < firstDate);
-                    return KeyValuePair.Create(enumerator, (done, (enumerator.Current?.Xp ?? 0.0, x.Second)));
-                }));
+                        var enumerator = x.First.LeaderboardCompHistory.GetEnumerator();
+                        var done = false;
+
+                        do
+                        {
+                            done = !enumerator.MoveNext();
+                        } while (!done && enumerator.Current.Timestamp.Date < firstDate);
+                        return KeyValuePair.Create(enumerator, (done, (enumerator.Current?.Xp ?? 0.0, x.Second)));
+                    })
+                );
 
             try
             {
@@ -103,6 +105,7 @@ namespace BlockTanksStats.ViewModels
                                 nextValue = statsEnumerator.Current.Xp;
                                 notDone = statsEnumerator.MoveNext();
                             } while (notDone && statsEnumerator.Current.Timestamp.Date <= currentDate);
+
                             statsEnumerators[statsEnumerator] = (!notDone, (nextValue, clanViewModel));
                             clanViewModel.XP = clanViewModel.XP.Append(nextValue - lastValue);
                         }
@@ -135,7 +138,8 @@ namespace BlockTanksStats.ViewModels
             CancellationToken cancellation)
         {
             _logger.Debug("Fetching clans from the database...");
-            var clans = await ClanRepository.GetAsync(cancellation);
+            var clans = await ClanRepository.GetActiveClansAsync(cancellation);
+
             var relativeToClan = clans.Single(c => c.Tag == _relativeToClanTag);
             Clans = clans
                 .Select(c => new Clan {

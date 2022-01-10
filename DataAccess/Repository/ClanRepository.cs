@@ -3,6 +3,8 @@ using MongoDB.Driver;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DataAccess.Repository
 {
@@ -15,6 +17,15 @@ namespace DataAccess.Repository
 
         public async Task<Clan> GetByClanIdAsync(string clanId, CancellationToken cancellation = default) =>
             await (await _models.FindAsync(clan => clan.ClanId == clanId, cancellationToken: cancellation)).FirstOrDefaultAsync(cancellation);
+
+        public virtual async Task<IEnumerable<Clan>> GetActiveClansAsync(CancellationToken cancellation = default) =>
+            (await GetAsync(cancellation))
+                .GroupBy(c => c.Tag)
+                .Select(g =>
+                {
+                    var timestamp = g.Max(c2 => c2.Timestamp);
+                    return g.First(c => c.Timestamp == timestamp);
+                }).ToList();
 
         public override async Task<Clan> CreateAsync(Clan clan, CancellationToken cancellation = default)
         {
