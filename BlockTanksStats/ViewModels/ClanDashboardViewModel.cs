@@ -17,8 +17,10 @@ namespace BlockTanksStats.ViewModels
         public IEnumerable<Player> Players { get; private set; }
         public IEnumerable<Player> PlayersXP { get => Players; }
         public IEnumerable<Player> PlayersKDR { get => Players; }
+        public IEnumerable<Player> PlayersGames { get => Players; }
         public IEnumerable<DateTime> DatesXP { get; private set; } = Enumerable.Empty<DateTime>();
         public IEnumerable<DateTime> DatesKDR { get; private set; } = Enumerable.Empty<DateTime>();
+        public IEnumerable<DateTime> DatesGames { get; private set; } = Enumerable.Empty<DateTime>();
 
         public ClanDashboardViewModel(
             IClanRepository clanRepository,
@@ -42,10 +44,8 @@ namespace BlockTanksStats.ViewModels
             --periodLengthDays; // We are going to ignore today so the number of days considered is actually 1 less
             var firstDate = now.Date.AddDays(-periodLengthDays);
 
-            IEnumerable<(DataAccess.Models.Player, IEnumerable<double?>)> rows = players.Select(player =>
+            IEnumerable<IEnumerable<double?>> rows = players.Select(player =>
             {
-                // Can't let this variable be a List because we can't rely on IEnumerable<> being covariant
-                // because this type is part of the Tuple and is not directly of the IEnumerable<> itself.
                 var cells = new List<double?>();
                 using var statsEnumerator = player.LeaderboardCompHistory.GetEnumerator();
 
@@ -63,7 +63,7 @@ namespace BlockTanksStats.ViewModels
                     {
                         var notDone = true;
                         PlayerLeaderboardComp next = default;
-                        // If there are more than 1 days between the current and last, then ignore the last so that the XP of currentDate will be just 0
+                        // If there are more than 1 'days' between the current and last, then ignore the last so that the XP of currentDate will be just 0
                         var ignoreLast = (currentDate - last.Timestamp.Date).Days > days;
                         var prev = ignoreLast ? statsEnumerator.Current : last;
 
@@ -80,12 +80,12 @@ namespace BlockTanksStats.ViewModels
                         cells.Add(null);
                     }
                 }
-                return (player, cells as IEnumerable<double?>);
+                return cells;
             });
 
             var rowsEnumerators = rows
                 .Select(c => {
-                    var enumerator = c.Item2.GetEnumerator();
+                    var enumerator = c.GetEnumerator();
                     enumerator.MoveNext();
                     return enumerator;
                 })
@@ -130,7 +130,7 @@ namespace BlockTanksStats.ViewModels
 
             var firstDate = now.Date.AddDays(-periodLengthDays);
 
-            IEnumerable<(DataAccess.Models.Player, Player, (int?, int?), IEnumerable<(int, int)?>)> rows = players
+            IEnumerable<(Player, (int?, int?), IEnumerable<(int, int)?>)> rows = players
                 .Zip(playerViewModels)
                 .Select(p =>
             {
@@ -170,10 +170,10 @@ namespace BlockTanksStats.ViewModels
 
                 var kills = cells.Sum(cell => cell?.Item1);
                 var deaths = cells.Sum(cell => cell?.Item2);
-                return (player, p.Second, (kills, deaths), cells as IEnumerable<(int, int)?>);
+                return (p.Second, (kills, deaths), cells as IEnumerable<(int, int)?>);
             });
 
-            foreach (var (player, playerViewModel, (kills, deaths), values) in rows)
+            foreach (var (playerViewModel, (kills, deaths), values) in rows)
             {
                 var kdr = kills / (deaths == 0.0 ? 1.0 : deaths ?? 1.0);
                 playerViewModel.AverageKDRNumber = kdr;
@@ -182,9 +182,9 @@ namespace BlockTanksStats.ViewModels
 
             var rowsEnumerators = rows
                 .Select(r => {
-                    var enumerator = r.Item4.GetEnumerator();
+                    var enumerator = r.Item3.GetEnumerator();
                     enumerator.MoveNext();
-                    return (enumerator, r.Item2);
+                    return (enumerator, r.Item1);
                 })
                 .ToList();
 
@@ -219,6 +219,89 @@ namespace BlockTanksStats.ViewModels
             }
         }
 
+        private void AddGames(
+            IEnumerable<Player> playerViewModels,
+            IEnumerable<DataAccess.Models.Player> players,
+            int days,
+            int periodLengthDays,
+            DateTime now)
+        {
+            --periodLengthDays; // We are going to ignore today so the number of days considered is actually 1 less
+            var firstDate = now.Date.AddDays(-periodLengthDays);
+
+            IEnumerable<IEnumerable<int?>> rows = players.Select(player =>
+            {
+                var cells = new List<int?>();
+                using var gamesEnumerator = player.CompletedGames.GetEnumerator();
+
+                // Move the enumerator to the first CompletedGame on firstDate or after
+                var done = false;
+                do
+                {
+                    done = !gamesEnumerator.MoveNext();
+                } while (!done && gamesEnumerator.Current.StartTime.Date < firstDate);
+
+                CompletedGame last = gamesEnumerator.Current ?? default;
+                for (var currentDate = firstDate; currentDate <= now.Date; currentDate = currentDate.AddDays(days))
+                {
+                    if (!done && gamesEnumerator.Current.StartTime.Date <= currentDate)
+                    {
+                        var counter = 0;
+                        do
+                        {
+                            if (gamesEnumerator.Current.StartTime.Date < currentDate)
+                            {
+                                _logger.Error("That's weird");
+                            }
+                            ++counter;
+                        } while (!(done = !gamesEnumerator.MoveNext()) && gamesEnumerator.Current.StartTime.Date <= currentDate);
+
+                        cells.Add(counter);
+                    }
+                    else
+                    {
+                        cells.Add(null);
+                    }
+                }
+                return cells;
+            });
+
+            var rowsEnumerators = rows
+                .Select(c => {
+                    var enumerator = c.GetEnumerator();
+                    enumerator.MoveNext();
+                    return enumerator;
+                })
+                .Zip(playerViewModels)
+                .ToList();
+
+            try
+            {
+                for (var currentDate = firstDate; currentDate <= now.Date; currentDate = currentDate.AddDays(days))
+                {
+                    DatesGames = DatesGames.Append(currentDate);
+                    foreach (var (statsEnumerator, player) in rowsEnumerators)
+                    {
+                        player.Games = player.Games.Append(statsEnumerator.Current);
+                        statsEnumerator.MoveNext();
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var (enumerator, _) in rowsEnumerators)
+                {
+                    enumerator.Dispose();
+                }
+            }
+
+            DatesGames = DatesGames.ToList();
+            foreach (var playerViewModel in playerViewModels)
+            {
+                playerViewModel.Games = playerViewModel.Games.ToList();
+            }
+        }
+
         public override async Task OnGenerateAsync(
             DateTime now,
             int days,
@@ -238,11 +321,13 @@ namespace BlockTanksStats.ViewModels
                 {
                     Name = p.DisplayName,
                     CurrentTotalXp = p.LeaderboardCompHistory.LastOrDefault()?.Xp ?? 0.0,
+                    CurrentTotalGames = p.CompletedGames.Count(),
                 })
                 .ToList();
 
             AddXP(Players, players, days, periodLengthDays, now);
             AddKDR(Players, players, days, periodLengthDays, now);
+            AddGames(Players, players, days, periodLengthDays, now);
 
             // TODO: refactor. The XP and KDR lists are now sharing this same Players list. This only works because the XP dashboard does it's own sorting.
             // This will break when adding a new dashboard that also relies on sorting.

@@ -1,4 +1,5 @@
 ﻿using BlockTanksStats.ViewModels;
+using ClosedXML.Excel;
 using ClosedXML.Report;
 using Serilog;
 using System;
@@ -24,7 +25,8 @@ namespace BlockTanksStats
             using var template = new XLTemplate(viewModel.TemplateFile);
             template.AddVariable(viewModel);
             template.Generate();
-            template.SaveAs(dashboardFile);
+            template.Workbook.NamedRanges.DeleteAll();
+            template.SaveAs(dashboardFile, true);
             logger.Information($"Saved dashboard {Path.GetFileNameWithoutExtension(dashboardFile)}...");
         }
     }

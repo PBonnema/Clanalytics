@@ -77,7 +77,7 @@ namespace Ingestion.Services
         private async Task FetchPlayersStats(IEnumerable<string> playerNames, string clanTag, CancellationToken cancellation = default)
         {
             // Prevent players from being fetched twice if they are both tracked separately and in a tracked clan
-            playerNames = await _playerRepository.FilterPlayersNotInClanAsync(playerNames, cancellation);
+            playerNames = await _playerRepository.FilterPlayersNotAlreadyFetchedAsync(playerNames, cancellation);
 
             _logger.Information($"Fetching stats of {playerNames.Count()} players...");
 
@@ -119,7 +119,7 @@ namespace Ingestion.Services
                     }
                     catch (Exception e)
                     {
-                        _logger.Error($"Fetching stats for member of clan {clanTag} failed. Continuing...: ${e}");
+                        _logger.Error($"Fetching stats for {playerName} of clan {clanTag} failed. Continuing...: ${e}");
                     }
                 }
                 tasks.Add(action());

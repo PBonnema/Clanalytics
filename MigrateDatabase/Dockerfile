@@ -1,9 +1,9 @@
 ﻿# syntax=docker/dockerfile:1.2
-FROM mcr.microsoft.com/dotnet/runtime:5.0-alpine AS base
+FROM mcr.microsoft.com/dotnet/runtime:6.0-alpine AS base
 WORKDIR /app
 
 ###################
-FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine AS publish
+FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS publish
 ARG MigrateDatabaseDir
 ARG DataAccessDir
 

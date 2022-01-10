@@ -50,13 +50,13 @@ namespace Ingestion.Agents
         {
             playerName = Uri.EscapeDataString(playerName.ToLower());
 
-            _logger.Verbose($"GET {_httpClient.BaseAddress}{USER_DATA_ENDPOINT}/{playerName} cookies: {_cookieContainer.GetCookieHeader(new Uri(_httpClient.BaseAddress.ToString()))}");
+            string cookieHeader = _cookieContainer.GetCookieHeader(new Uri(_httpClient.BaseAddress.ToString()));
+            _logger.Verbose($"GET {_httpClient.BaseAddress}{USER_DATA_ENDPOINT}/{playerName} cookies: {cookieHeader}");
 
             return await _pollyPolicy.ExecuteAsync(async (cancellation) =>
             {
                 var response = await _httpClient.GetAsync($"/{USER_DATA_ENDPOINT}/{playerName}", cancellation);
                 _logger.Verbose($"{playerName} response: {response.StatusCode}");
-                var asdf = await response.Content.ReadAsStringAsync(cancellation);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -74,7 +74,7 @@ namespace Ingestion.Agents
                 }
                 else
                 {
-                    throw new HttpRequestException(null, null, response.StatusCode);
+                    throw new HttpRequestException($"{response.ReasonPhrase}; {await response.Content.ReadAsStringAsync(cancellation)}", null, response.StatusCode);
                 }
             }, cancellation);
         }

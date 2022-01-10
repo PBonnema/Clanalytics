@@ -19,6 +19,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccess", "DataAccess\Da
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MigrateDatabase", "MigrateDatabase\MigrateDatabase.csproj", "{3C1DAB0C-ABAA-43AE-A5B9-5190E3D85443}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Commands", "Commands", "{82663E26-A833-41F4-AAF7-36192F315C90}"
+	ProjectSection(SolutionItems) = preProject
+		Commands\migrate-db-prod.ps1 = Commands\migrate-db-prod.ps1
+		Commands\pull.ps1 = Commands\pull.ps1
+		Commands\release-to-prod.ps1 = Commands\release-to-prod.ps1
+		Commands\release-to-test.ps1 = Commands\release-to-test.ps1
+		Commands\run-dashboard-prod.ps1 = Commands\run-dashboard-prod.ps1
+		Commands\run-dashboard-test.ps1 = Commands\run-dashboard-test.ps1
+		Commands\run-db-prod.ps1 = Commands\run-db-prod.ps1
+		Commands\run-db-test.ps1 = Commands\run-db-test.ps1
+		Commands\run-ingestion-prod.ps1 = Commands\run-ingestion-prod.ps1
+		Commands\run-ingestion-test.ps1 = Commands\run-ingestion-test.ps1
+		Commands\start-dev-environment.ps1 = Commands\start-dev-environment.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +68,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{82663E26-A833-41F4-AAF7-36192F315C90} = {740EEC28-D557-4323-B219-A901DC6D0DB6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {16CA001F-6D40-4BD9-9FF5-AC678A9C081B}

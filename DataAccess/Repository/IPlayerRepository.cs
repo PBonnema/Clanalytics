@@ -7,7 +7,7 @@ namespace DataAccess.Repository
 {
     public interface IPlayerRepository : IRepository<Player>
     {
-        Task<IEnumerable<string>> FilterPlayersNotInClanAsync(IEnumerable<string> playerNames, CancellationToken cancellation = default);
+        Task<IEnumerable<string>> FilterPlayersNotAlreadyFetchedAsync(IEnumerable<string> playerNames, CancellationToken cancellation = default);
         Task<IEnumerable<Player>> GetAllByNamesAsync(IEnumerable<string> playerNames, CancellationToken cancellation = default);
         Task<IEnumerable<Player>> GetByClanAsync(string clanTag, CancellationToken cancellation = default);
         Task<Player> GetByPlayerIdAsync(string playerId, CancellationToken cancellation = default);

@@ -24,7 +24,7 @@ namespace Ingestion.Services
             if (storedClan == null)
             {
                 await _clanRepository.CreateAsync(clan, cancellation);
-                _logger.Debug($"Added stats for new clan {storedClan.Tag}");
+                _logger.Debug($"Added stats for new clan {clan.Tag}");
             }
             else
             {
