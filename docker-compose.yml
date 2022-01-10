@@ -15,6 +15,19 @@ services:
         networks:
             - nat
 
+    mongo-transfer:
+        profiles:
+            - transfer-db-test
+        depends_on:
+            - mongo
+            - mongo-test
+        image: mongo
+        restart: on-failure
+        networks:
+            - nat-test
+            - nat
+        command: sh -c 'mongodump -d BlockTanksStats --uri="mongodb://root:example@mongo:27017" --archive --authenticationDatabase admin | mongorestore --drop --uri="mongodb://root:example@mongo-test:27017" --archive'
+
     mongo-test:
         profiles:
             - only-db-test
@@ -33,19 +46,6 @@ services:
             - nat-test
         volumes:
             - stats-test:/data/db
-
-    mongo-transfer:
-        profiles:
-            - transfer-db-test
-        depends_on:
-            - mongo
-            - mongo-test
-        image: mongo
-        restart: on-failure
-        networks:
-            - nat-test
-            - nat
-        command: sh -c 'mongodump -d BlockTanksStats --uri="mongodb://root:example@mongo:27017" --archive --authenticationDatabase admin | mongorestore --drop --uri="mongodb://root:example@mongo-test:27017" --archive'
 
     mongo:
         profiles:
@@ -95,6 +95,7 @@ services:
         environment:
             ME_CONFIG_MONGODB_ADMINUSERNAME: root
             ME_CONFIG_MONGODB_ADMINPASSWORD: example
+            ME_CONFIG_MONGODB_SERVER: mongo
         networks:
             - nat
 
