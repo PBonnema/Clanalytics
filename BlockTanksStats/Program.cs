@@ -125,7 +125,7 @@ namespace BlockTanksStats
                     // Get this id and token by creating a webhook in Discord and open it's link. That URL will contain them.
                     var webhookId = new Snowflake(871070885665177630ul);
                     var webhookToken = @"pPvj1uOoCCahxLgWnjMrrTyATNl7l8tRCrm5boFp3QrwlgyLAg7ZkacRN_sEwWlQo2ub";
-                    var botToken = @"ODcxMDYxMTE4ODI5ODc1MjUx.YQV04g.pCUA69pGnS3KcUBqt4KQty3EsC4";
+                    var botToken = @"ODcxMDYxMTE4ODI5ODc1MjUx.YQV04g.xCS9RYzpU1p85coDn0MkM-kJr2w";
                     var serviceCollection = new ServiceCollection()
                         .AddDiscordRest(_ => botToken)
                         .AddSingleton(sp => new DashboardUploader(
