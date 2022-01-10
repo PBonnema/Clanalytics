@@ -18,12 +18,12 @@ namespace DataAccess.Repository
         public async Task<Clan> GetByClanIdAsync(string clanId, CancellationToken cancellation = default) =>
             await (await _models.FindAsync(clan => clan.ClanId == clanId, cancellationToken: cancellation)).FirstOrDefaultAsync(cancellation);
 
-        public virtual async Task<IEnumerable<Clan>> GetActiveClansAsync(CancellationToken cancellation = default) =>
+        public async Task<IEnumerable<Clan>> GetActiveClansAsync(CancellationToken cancellation = default) =>
             (await GetAsync(cancellation))
                 .GroupBy(c => c.Tag)
                 .Select(g =>
                 {
-                    var timestamp = g.Max(c2 => c2.Timestamp);
+                    var timestamp = g.Max(c => c.Timestamp);
                     return g.First(c => c.Timestamp == timestamp);
                 }).ToList();
 

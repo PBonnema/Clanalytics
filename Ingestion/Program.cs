@@ -84,7 +84,7 @@ namespace Ingestion
 
                     var ownedClans = new OwnedClans { OwnedClanCredentials = new Dictionary<string, (string, string)> {
                         //{ "RIOT", ( "Jupiter", "$2a$08$VMc9J5EvpnHFlVgXm5oaDuA.a4MUZ49Bf49p6P8iFi4GE/YmRjQ5K") },
-                        { "RIOT2", ( "xRIOTx", "$2a$08$mjkrpe4CgwCwl8Lq5pup1epImuCfHmS8RK4DPb8LkgCnR9jPBDJ7e") },
+                        { "RIOT2", ( "xRIOTx", "$2a$08$EXf0c/jzlVQGpTGLLDkxS.q16lj94k6ZrERsydYbHbcO/OG0xEHj2") },
                         { "RIOT3", ( "Jupiter alt", "$2a$08$63S3JMJzOawaOPuyWmu3aepHsZjymDNunjbFzCNmdI/feFKHkS1D6") },
                     } };
                     var playerService = new PlayerService(playerRepository, blockTanksPlayerAPIAgent, scrapeBTPageService, logger.ForContext<PlayerService>(), ownedClans);
