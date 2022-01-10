@@ -1,8 +1,8 @@
-using BlockTanksStats.ViewModels;
+﻿using BlockTanksStats.ViewModels;
 using DataAccess.Repository;
 using Microsoft.Extensions.DependencyInjection;
 using Remora.Discord.API.Abstractions.Rest;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Discord.Rest.Extensions;
 using Serilog;
 using Serilog.Events;
@@ -70,7 +70,7 @@ namespace BlockTanksStats
                     var clanRepository = new ClanRepository(blockTanksStatsDatabaseSettings, now);
                     var days = 1;
                     var periodLengthDays = int.Parse(Environment.GetEnvironmentVariable("PERIOD_LENGHT_DAYS"));
-                    var clanLeaderBoardRelativeToClanTag = "RIOT";
+                    var clanLeaderBoardRelativeToClanTag = "RIOT"; // TODO change to an ID
 
                     if (Directory.Exists(dashboardsPath))
                     {
@@ -95,23 +95,23 @@ namespace BlockTanksStats
                     await DashboardGenerator.GenerateAsync(clanLeaderBoardViewModel, $"{dashboardsPath}/Clan Leaderboard.xlsx", now, days, periodLengthDays, logger);
 
                     var tasks = new List<Task>();
+                    // TODO change to IDs
                     foreach (var clanTag in new[] {
                         "RIOT",
                         "RIOT2",
                         "RIOT3",
                         "ZR",
-                        "DRONE",
                         "MERC",
-                        "KRYPTO",
                         "FOLDIN",
-                        "SPACE",
-                        "INQ",
-                        "SENTRY",
-                        "PRO",
                         "SPEEDY",
                         "E8",
-                        "TS12",
-                        "RIES",
+                        "SKILL",
+                        "ZEMFR",
+                        "RP2",
+                        "AIE",
+                        "SIEGE",
+                        "GQ",
+                        "DID",
                         "Tracked Player",
                     })
                     {
