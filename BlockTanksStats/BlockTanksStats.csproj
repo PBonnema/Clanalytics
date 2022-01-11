@@ -4,10 +4,12 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>disable</Nullable>
+    <UserSecretsId>c103fe9e-6536-4304-a156-2660d5132424</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML.Report" Version="0.2.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.KeyPerFile" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.0" />
     <PackageReference Include="Remora.Discord" Version="2022.3.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />

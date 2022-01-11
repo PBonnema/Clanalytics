@@ -1,7 +1,8 @@
-using DataAccess.Repository;
+﻿using DataAccess.Repository;
 using Ingestion.Agents;
 using Ingestion.Models;
 using Ingestion.Services;
+using Microsoft.Extensions.Configuration;
 using Polly;
 using Serilog;
 using Serilog.Events;
@@ -32,6 +33,11 @@ namespace Ingestion
 
                 logger.Information($"Initalizing at {now}...");
 
+                var config = new ConfigurationBuilder()
+                    .AddUserSecrets<Program>(true)
+                    .AddKeyPerFile("/run/secrets/", true)
+                    .Build();
+
                 try
                 {
                     var sw = Stopwatch.StartNew();
@@ -49,7 +55,7 @@ namespace Ingestion
                             seleniumChromeUrl = "http://selenium-chrome:4444/wd/hub";
                             break;
                         case "Development":
-                            connectionString = "mongodb://root:example@localhost:27018";
+                            connectionString = "mongodb://root:example@localhost:27018"; // Port of the test DB
                             seleniumChromeUrl = "http://localhost:4444/wd/hub";
                             break;
                     }
@@ -83,15 +89,15 @@ namespace Ingestion
                     ), "https://blocktanks.io");
 
                     var ownedClans = new OwnedClans { OwnedClanCredentials = new Dictionary<string, (string, string)> {
-                        //{ "RIOT", ( "Jupiter", "$2a$08$VMc9J5EvpnHFlVgXm5oaDuA.a4MUZ49Bf49p6P8iFi4GE/YmRjQ5K") },
-                        { "RIOT2", ( "xRIOTx", "$2a$08$EXf0c/jzlVQGpTGLLDkxS.q16lj94k6ZrERsydYbHbcO/OG0xEHj2") },
-                        { "RIOT3", ( "Jupiter alt", "$2a$08$63S3JMJzOawaOPuyWmu3aepHsZjymDNunjbFzCNmdI/feFKHkS1D6") },
+                        //{ "RIOT", ( "Jupiter", config["auth-hash-Jupiter"]) },
+                        { "RIOT2", ( "xRIOTx", config["auth-hash-xRIOTx"]) },
+                        { "RIOT3", ( "Jupiter alt", config["auth-hash-Jupiter-alt"]) },
                     } };
                     var playerService = new PlayerService(playerRepository, blockTanksPlayerAPIAgent, scrapeBTPageService, logger.ForContext<PlayerService>(), ownedClans);
 
-                    // TODO when a player is updated, all it's stats are overwritting.
+                    // TODO when a player is updated, all it's stats are overwritten.
                     // This means that if a player is both tracked and is a member of a tracked clan, and we first fetch it as a member of a clan
-                    // And then as a tracked player. The 1e update will remain in the database and the player will be seen as a member of it's clan.
+                    // And then as a tracked player. The 1e update will remain in the database and the player will be seen as a member of it's clan and therefore skipped.
                     // We prefer that so fetch clans first.
                     await playerService.FetchClanMemberStats(new[] {
                         "RIOT",
@@ -182,7 +188,8 @@ namespace Ingestion
             }
             catch (Exception e)
             {
-                File.AppendAllText($"{DateTimeOffset.UtcNow} {logFilePath}/IngestionError.txt", e.ToString());
+                static string a (Exception b) => $"{b}\n{(b.InnerException == null ? "\n" : a(b.InnerException))}";
+                File.AppendAllText($"{logFilePath}/IngestionError{DateTimeOffset.UtcNow:yyyymmdd}.txt", a(e));
                 throw;
             }
         }

@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace BlockTanksStats
 {
@@ -34,6 +35,11 @@ namespace BlockTanksStats
 
                 try
                 {
+                    var config = new ConfigurationBuilder()
+                        .AddUserSecrets<Program>(true)
+                        .AddKeyPerFile("/run/secrets/", true)
+                        .Build();
+
                     var sw = Stopwatch.StartNew();
 
                     var culture = CultureInfo.CreateSpecificCulture("nl-NL");
@@ -41,9 +47,9 @@ namespace BlockTanksStats
                     culture.NumberFormat.NumberDecimalDigits = 1;
                     CultureInfo.CurrentCulture = culture;
 
-                    string connectionString = "";
-                    string dashboardsPath = "";
-                    string templatesPath = "./Templates";
+                    var connectionString = "";
+                    var dashboardsPath = "";
+                    var templatesPath = "./Templates";
                     switch (Environment.GetEnvironmentVariable("ENVIRONMENT"))
                     {
                         case "Production":
@@ -55,7 +61,7 @@ namespace BlockTanksStats
                             dashboardsPath = "/app/Dashboards";
                             break;
                         case "Development":
-                            connectionString = "mongodb://root:example@localhost:27018";
+                            connectionString = "mongodb://root:example@localhost:27018"; // Port of the test DB
                             dashboardsPath = "../../../../Dashboards-test";
                             break;
                     }
@@ -122,17 +128,15 @@ namespace BlockTanksStats
                     await Task.WhenAll(tasks);
 
                     logger.Information("Posting dashboards in Discord...");
-                    // Get this id and token by creating a webhook in Discord and open it's link. That URL will contain them.
+                    // Get this webhookid and token by creating a webhook in Discord and open it's link. That URL will contain them.
                     var webhookId = new Snowflake(871070885665177630ul);
-                    var webhookToken = @"pPvj1uOoCCahxLgWnjMrrTyATNl7l8tRCrm5boFp3QrwlgyLAg7ZkacRN_sEwWlQo2ub";
-                    var botToken = @"ODcxMDYxMTE4ODI5ODc1MjUx.YQV04g.xCS9RYzpU1p85coDn0MkM-kJr2w";
                     var serviceCollection = new ServiceCollection()
-                        .AddDiscordRest(_ => botToken)
+                        .AddDiscordRest(_ => config["botToken"])
                         .AddSingleton(sp => new DashboardUploader(
                             sp.GetRequiredService<IDiscordRestWebhookAPI>(),
                             sp.GetRequiredService<IDiscordRestChannelAPI>(),
                             webhookId,
-                            webhookToken,
+                            config["webhookToken"],
                             logger))
                         .BuildServiceProvider();
                     var dashboardUploader = serviceCollection.GetRequiredService<DashboardUploader>();
@@ -151,7 +155,8 @@ namespace BlockTanksStats
             }
             catch (Exception e)
             {
-                File.AppendAllText($"{logFilePath}/BlockTanksStatsError{DateTimeOffset.UtcNow.Date}.txt", e.ToString());
+                static string a(Exception b) => $"{b}\n{(b.InnerException == null ? "\n" : a(b.InnerException))}";
+                File.AppendAllText($"{logFilePath}/AnalyticsError{DateTimeOffset.UtcNow:yyyymmdd}.txt", a(e));
                 throw;
             }
         }

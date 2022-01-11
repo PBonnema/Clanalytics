@@ -1,3 +1,17 @@
+version: "3.9"
+
+secrets:
+    auth-hash-Jupiter:
+        file: ./.secrets/auth-hash-Jupiter
+    auth-hash-Jupiter-alt:
+        file: ./.secrets/auth-hash-Jupiter-alt
+    auth-hash-xRIOTx:
+        file: ./.secrets/auth-hash-xRIOTx
+    botToken:
+        file: ./.secrets/botToken
+    webhookToken:
+        file: ./.secrets/webhookToken
+
 services:
     migrate-database:
         profiles:
@@ -239,6 +253,10 @@ services:
             - nat-test
         volumes:
             - ./Logs:/app/Logs
+        secrets:
+            - auth-hash-Jupiter
+            - auth-hash-Jupiter-alt
+            - auth-hash-xRIOTx
 
     ingestion:
         profiles:
@@ -260,6 +278,10 @@ services:
             - nat
         volumes:
             - ./Logs:/app/Logs
+        secrets:
+            - auth-hash-Jupiter
+            - auth-hash-Jupiter-alt
+            - auth-hash-xRIOTx
 
     blocktanksstats-test:
         profiles:
@@ -281,6 +303,9 @@ services:
         volumes:
             - ./Dashboards-test:/app/Dashboards
             - ./Logs:/app/Logs
+        secrets:
+            - webhookToken
+            - botToken
 
     blocktanksstats:
         profiles:
@@ -302,6 +327,9 @@ services:
         volumes:
             - ./Dashboards:/app/Dashboards
             - ./Logs:/app/Logs
+        secrets:
+            - webhookToken
+            - botToken
 
 networks:
     nat:

@@ -1,1 +1,1 @@
-docker-compose --profile ingestion up --exit-code-from blocktanksstats
+docker-compose --profile ingestion up --exit-code-from ingestion
