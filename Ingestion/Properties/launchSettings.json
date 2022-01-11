@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "ENVIRONMENT": "Development",
-        "LOG_PATH": "C:/Users/peterB/repositories/hobby projecten/BlockTanksStats/Logs/Development"
+        "LOG_PATH": "C:/Users/peterB/repositories/hobby projecten/Clanalytics/Logs/Development"
       }
     }
   }

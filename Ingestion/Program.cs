@@ -1,4 +1,4 @@
-﻿using DataAccess.Repository;
+using DataAccess.Repository;
 using Ingestion.Agents;
 using Ingestion.Models;
 using Ingestion.Services;
@@ -167,7 +167,7 @@ namespace Ingestion
                     var groupSize = 20;
                     for(var i = 0; i < trackedPlayerNames.Length; i+= groupSize)
                     {
-                        var endIndex = Math.Min(trackedPlayerNames.Length - 1, i + groupSize);
+                        var endIndex = Math.Min(trackedPlayerNames.Length, i + groupSize);
                         await playerService.FetchTrackedPlayerStats(trackedPlayerNames[i..endIndex]);
                     }
 

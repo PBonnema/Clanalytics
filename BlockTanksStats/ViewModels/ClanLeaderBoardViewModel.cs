@@ -41,7 +41,7 @@ namespace BlockTanksStats.ViewModels
             var riotAvgXp = 0.0;
             // Skip today as this day isn't over yet.
             var riotClanStats = relativeToClan.LeaderboardCompHistory.LastOrDefault(l => l.Timestamp < now.Date);
-            if (firstRiotStats != null)
+            if (firstRiotStats != null && riotClanStats != null)
             {
                 riotAvgXp = (riotClanStats.Xp - firstRiotStats.Xp) / periodLengthDays;
             }
