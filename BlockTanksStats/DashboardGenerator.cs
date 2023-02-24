@@ -23,7 +23,7 @@ namespace BlockTanksStats
             await viewModel.OnGenerateAsync(now, days, periodLengthDays, cancellation);
             using var template = new XLTemplate(viewModel.TemplateFile);
             template.AddVariable(viewModel);
-            template.Generate();
+            template.Generate(); // TODO: bug. This cannot handle viewModels with empty collections to display. Will result in nullreference exception.
             template.Workbook.NamedRanges.DeleteAll();
             template.SaveAs(dashboardFile, true);
             logger.Information($"Saved dashboard {Path.GetFileNameWithoutExtension(dashboardFile)}...");

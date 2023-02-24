@@ -24,7 +24,7 @@ namespace DataAccess.Repository
         public async Task<IEnumerable<Player>> GetByClanAsync(string clanTag, CancellationToken cancellation = default) =>
             await (await _models.FindAsync(p => p.ClanTag == clanTag, cancellationToken: cancellation)).ToListAsync(cancellation);
         // TODO Bug: you now also get players with the correct clan tag but are not actually in the clan anymore.
-        // For example, because they couldn't be updated for some while or their account was deleted (so their stats don't update anymore).
+        // For example, because they left the clan and couldn't be updated for some while or their account was deleted (so their stats don't update anymore).
         // Also, if a tracked clan was recreated and we have players in the old clan in the database, then you get players of both the old and the new clan.
         // this method just doesn't make sense. Make a GetByClanId instead. Player objects don't have a clan id though. They have a clan tag.
         // So this requires a database migration where we do a translation of clan tag to clan id and then throw away the clan tag.

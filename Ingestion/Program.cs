@@ -97,7 +97,7 @@ namespace Ingestion
 
                     // TODO when a player is updated, all it's stats are overwritten.
                     // This means that if a player is both tracked and is a member of a tracked clan, and we first fetch it as a member of a clan
-                    // And then as a tracked player. The 1e update will remain in the database and the player will be seen as a member of it's clan and therefore skipped.
+                    // And them as a tracked player. The 1e update will remain in the database and the player will be seen as a member of it's clan and therefore skipped.
                     // We prefer that so fetch clans first.
                     await playerService.FetchClanMemberStats(new[] {
                         "RIOT",
@@ -122,10 +122,10 @@ namespace Ingestion
                     var trackedPlayerNames = new[]
                     {
                         "Jupiter",
-                        //"Jupiter alt",
+                        "Jupiter alt",
                         //"Eazy clap",
                         //"Izzz",
-                        //"fethi",
+                        "fethi",
                         //"Bomihu",
                         //"otsosi",
                         //"Catkid",
